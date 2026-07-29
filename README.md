@@ -1,97 +1,158 @@
-# 林序 · 工程笔记
+# 边界工程志
 
-个人技术博客、工程项目展示平台与长期技术档案。网站聚焦嵌入式通信接口测试、自动化测试工具、软件架构、FPGA 学习与工程实践。
+面向长期维护的个人技术博客、工程实践档案和内容管理系统。内容聚焦嵌入式通信、测试自动化、软件工具、数字系统、AI 辅助工程与部署实践。
 
-## 项目状态
+## 当前能力
 
-当前仓库包含：
+- React 19、TypeScript、Vinext/Vite 服务端渲染前台。
+- 首页、文章、分类、标签、搜索、项目、技术栈、时间线、关于、联系、404、500、RSS、Sitemap 和 robots。
+- 数据库 Markdown 内容，支持 GFM、Prism 常用语言代码高亮与复制、KaTeX、Mermaid、自动目录、阅读进度和图片放大。
+- FastAPI、SQLAlchemy 2、Pydantic 2、Alembic 和 PostgreSQL。
+- 管理员登录、HttpOnly Cookie、CSRF、角色验证、登录限制和修改密码。
+- 文章/项目 CRUD、草稿、发布保密检查、软删除、恢复、乐观锁和 slug 301 记录。
+- 分类、标签、时间线、友情链接、媒体、设置、操作日志、匿名访问统计和 PostgreSQL 备份 API。
+- 网站/SEO 设置由数据库驱动页眉、页脚、联系入口和全局元数据；公开接口仅返回固定白名单字段。
+- Windows 本地开发，以及 Linux、Docker Compose、Nginx、HTTPS 的生产配置。
 
-- 可部署的 React / TypeScript 前台：多页面、响应式、深浅色、文章、项目、技术栈、时间线、搜索、RSS、Sitemap 和 SEO 元数据。
-- FastAPI 后端骨架：认证、文章、项目、分类、标签、时间线、搜索、上传、设置、统计与备份接口边界。
-- PostgreSQL 数据模型与 Alembic 基线迁移。
-- 前后端基础自动化测试。
-- 完整的产品、架构、数据库、接口、部署、安全和运营文档。
+完整审计见 [docs/AUDIT_2026-07-24.md](docs/AUDIT_2026-07-24.md)，本轮验收证据见 [docs/ACCEPTANCE_2026-07-28.md](docs/ACCEPTANCE_2026-07-28.md)。
 
-管理后台的可视化编辑器、真实对象存储上传、全文搜索索引、评论审核与生产监控属于第二阶段；接口与数据结构已预留。
+## 目录
 
-## 技术方案
-
-前台使用 React 19、TypeScript、Vinext / Vite 和 CSS Design Tokens。公开内容由服务端生成，避免首屏加载大量 JavaScript，并保留良好的 SEO 能力。后端使用 Python 3.12、FastAPI、SQLAlchemy 2、Pydantic 2、Alembic 和 PostgreSQL。生产环境通过 Nginx 将 `/api` 转发到 FastAPI，静态与服务端页面由前台服务提供。
-
-选择前后端分离，是为了让内容展示、后台写作和后续工具服务保持独立演进。当前 Sites 版本发布公开前台；自有 Linux 环境可按 `deploy/` 中的配置部署完整前后端。
-
-## 本地开发
-
-### 前台
-
-要求 Node.js 22.13 或更高版本。
-
-```bash
-npm install
-npm run dev
+```text
+app/                  公开页面、管理入口、RSS、Sitemap
+components/           UI、Markdown、搜索和管理工作台
+lib/                  前端 API 与 Markdown 辅助
+backend/app/
+  api/                路由和权限依赖
+  core/               配置、安全、错误
+  db/                 数据库会话与基类
+  models/             SQLAlchemy 模型
+  repositories/       数据访问
+  schemas/            Pydantic 输入输出
+  services/           认证、媒体与备份服务
+backend/alembic/      PostgreSQL 迁移
+deploy/               开发/生产 Compose、Dockerfile、Nginx
+docs/                 架构、安全、部署和内容规范
 ```
 
-访问 `http://localhost:3000`。
+## Windows 本地开发
 
-### 后端
+要求：Node.js 22.13+、Python 3.12、Docker Desktop（仅用于 PostgreSQL）。
 
-要求 Python 3.12、PostgreSQL 16。
+### 1. 启动 PostgreSQL
 
-```bash
+```powershell
+docker compose -f deploy/compose.dev.yml up -d
+```
+
+### 2. 启动后端
+
+```powershell
 cd backend
 python -m venv .venv
-.venv/Scripts/activate
-pip install -e ".[dev]"
-copy .env.example .env
+.\.venv\Scripts\Activate.ps1
+python -m pip install --require-hashes -r requirements-dev.lock
+python -m pip install --no-deps -e .
+Copy-Item .env.example .env
 alembic upgrade head
+engineering-notes seed
 uvicorn app.main:app --reload --port 8000
 ```
 
-Linux / macOS 激活命令为 `source .venv/bin/activate`。接口文档位于 `http://localhost:8000/docs`。
+首次运行前编辑 `backend/.env`：
 
-### 测试
+- `DATABASE_URL=postgresql+asyncpg://engineering_notes:development-only-password@localhost:5432/engineering_notes`
+- 用本地随机值替换 `SECRET_KEY`。
+- 用本地管理员邮箱和至少 12 位密码替换 `INITIAL_ADMIN_EMAIL`、`INITIAL_ADMIN_PASSWORD`。
 
-```bash
-npm test
-cd backend
-pytest
+`engineering-notes seed` 可重复运行，不会重复创建示例内容。接口文档位于 `http://localhost:8000/docs`。
+种子命令也会创建可在后台“设置与运维”中修改的站点名称、作者、SEO 描述、关键词、邮箱和 GitHub 等公开默认值。
+
+### 3. 启动前端
+
+在新的 PowerShell 窗口：
+
+```powershell
+Copy-Item .env.example .env
+npm ci
+npm run dev
 ```
 
-## 配置
+访问 `http://localhost:3000`，管理入口为 `http://localhost:3000/admin`。
 
-前台公开配置通过部署环境设置。后端从 `backend/.env` 读取数据库、JWT、CORS、文件大小和日志配置。请复制 `.env.example`，不要提交真实密钥。
+如果 PowerShell 禁止执行 `npm.ps1`，使用 `npm.cmd` 运行相同命令，或按组织策略调整当前用户的脚本执行权限。
 
-## 内容写作
+## 测试与质量检查
 
-文章元数据建议包含 `title`、`slug`、`summary`、`category`、`tags`、`published_at`、`updated_at`、`seo_title` 和 `seo_description`。正文使用 Markdown 存储，渲染前必须经过 HTML 白名单清洗。
+```powershell
+npm ci
+npm run lint
+npm run typecheck
+npm test
 
-推荐文章结构：
+cd backend
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m ruff check app tests
+.\.venv\Scripts\alembic.exe upgrade head
+.\.venv\Scripts\python.exe tests\run_full_stack_smoke.py
+.\.venv\Scripts\python.exe tests\run_postgres_migration_smoke.py
+```
 
-1. 问题背景
-2. 目标与边界
-3. 环境说明
-4. 方案分析
-5. 实现过程
-6. 核心代码
-7. 测试验证
-8. 遇到的问题与解决方法
-9. 最终结果
-10. 总结与后续优化
+`npm test` 会先执行严格 TypeScript 检查，再构建 Vinext Worker，并执行服务端渲染、RSS、Markdown 安全、构建预算和浏览器组件测试。后端 API、生产配置与部署配置测试使用独立 SQLite 数据库；正式迁移仍以 PostgreSQL 为权威目标。
 
-## 部署
+`backend/requirements.lock` 和 `backend/requirements-dev.lock` 由 Python 3.12 的
+`pip-tools` 生成，固定直接及传递依赖并校验包哈希。更新依赖时执行：
 
-完整 Linux 部署步骤见 [部署文档](docs/DEPLOYMENT.md)，Nginx 示例见 `deploy/nginx.conf`，容器编排见 `deploy/docker-compose.yml`。
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m piptools compile --generate-hashes --strip-extras --output-file=requirements.lock pyproject.toml
+.\.venv\Scripts\python.exe -m piptools compile --generate-hashes --strip-extras --allow-unsafe --extra=dev --output-file=requirements-dev.lock pyproject.toml
+```
 
-上线前必须替换示例域名、邮箱与昵称，并执行安全检查清单。
+跨栈烟雾测试命令会在系统临时目录创建隔离数据库、仅在 `127.0.0.1:8765` 启动短时 FastAPI 服务，并验证真实 API 内容进入 React SSR；退出时停止服务并清理临时目录。
 
-## 文档索引
+PostgreSQL 迁移烟雾测试需要本机 `initdb`、`pg_ctl`、`createdb`、`psql`、`pg_dump` 和 `pg_restore`；找不到时可设置 `POSTGRES_BIN`。它创建隔离临时集群并迁移到最新版本，再将自定义格式备份恢复到第二个隔离数据库并核对 Alembic 版本，不连接现有数据库。
 
-- [需求与实施方案](docs/IMPLEMENTATION_PLAN.md)
-- [系统、数据与接口设计](docs/ARCHITECTURE.md)
-- [部署与备份](docs/DEPLOYMENT.md)
-- [安全与保密清单](docs/SECURITY.md)
-- [内容运营体系](docs/CONTENT_SYSTEM.md)
+## Docker 集成与生产部署
 
-## 许可与保密
+开发数据库配置：
 
-示例内容仅用于个人技术档案。工作相关内容应使用脱敏数据、模拟协议、虚构名称和重新绘制的图表，禁止发布客户信息、内部代码、真实测试数据、网络地址、账号、未授权截图或可反推出单位内部结构的信息。
+```bash
+docker compose -f deploy/compose.dev.yml config
+```
+
+生产配置：
+
+```bash
+cd deploy
+cp .env.production.example .env.production
+# 编辑所有占位值，并准备 certs/fullchain.pem 与 certs/privkey.pem
+docker compose --env-file .env.production -f compose.prod.yml config
+docker compose --env-file .env.production -f compose.prod.yml build
+docker compose --env-file .env.production -f compose.prod.yml up -d
+```
+
+推荐由宿主机 Nginx 暴露 80/443；前端和 FastAPI 仅绑定回环地址，PostgreSQL 只位于内部网络。可选的容器 Nginx profile 用于完整路由验证。启动顺序为 PostgreSQL 健康检查、Alembic 迁移、API、前端、Nginx。
+
+正式环境不使用 Cloudflare。DNS、Let's Encrypt、日志、备份、隔离恢复和不降级数据库的镜像回滚步骤见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
+
+## 配置与安全
+
+- 不提交 `.env`、真实密钥、数据库文件、上传文件、证书或备份。
+- 管理会话使用短期 HttpOnly Cookie；写请求校验 CSRF。
+- 发布文章前必须勾选保密检查，工作案例必须使用脱敏、模拟或重绘资料。
+- 图片会校验扩展名、MIME、文件头、大小和尺寸，并使用随机存储名。
+- 本地/Docker Volume 存储通过 `MediaStorage` 边界实现，当前生产环境只使用持久化 Docker Volume。
+- 数据库备份使用 `pg_dump` 自定义格式并记录 SHA-256；恢复仅允许超级管理员并要求精确确认短语。
+
+详细清单见 [docs/SECURITY.md](docs/SECURITY.md)。
+
+## 数据源与历史托管元数据
+
+正式业务数据只有一套：FastAPI → SQLAlchemy → PostgreSQL。前端的
+`data/profile.ts` 仅保存非敏感的个人展示文案，不是内容数据库。旧模板中的
+Drizzle、D1 示例和绑定已删除，不参与构建或运行。
+
+`.openai/hosting.json` 是既有 Sites 项目的历史托管元数据，为避免破坏关联而保留，
+但不属于 `devlelin.xyz` 的生产部署，也不承载文章、项目或管理数据。正式系统部署
+在 `/opt/engineering-notes`，由宿主机 Nginx 和 Let's Encrypt 提供 HTTPS。

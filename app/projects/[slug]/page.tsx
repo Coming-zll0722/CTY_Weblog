@@ -1,48 +1,152 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { projects } from "@/data/site";
+import { notFound, redirect } from "next/navigation";
+import { MarkdownContent } from "@/components/MarkdownContent";
+import { ZoomableImage } from "@/components/ZoomableImage";
+import { ApiError, getProject, getPublicSettingsOrDefaults } from "@/lib/api";
 
-export function generateStaticParams() {
-  return projects.map((project) => ({ slug: project.slug }));
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const project = await getProject(slug);
+    return {
+      title: project.title,
+      description: project.summary,
+      alternates: { canonical: `/projects/${project.slug}` },
+      openGraph: {
+        type: "website",
+        title: project.title,
+        description: project.summary,
+      },
+    };
+  } catch {
+    return {};
+  }
 }
 
-export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
+function ProjectSection({
+  eyebrow,
+  title,
+  source,
+}: {
+  eyebrow: string;
+  title: string;
+  source: string;
+}) {
+  if (!source) return null;
+  return (
+    <section className="case-section">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+      <div className="prose"><MarkdownContent source={source} /></div>
+    </section>
+  );
+}
+
+export default async function ProjectDetail({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const project = projects.find((item) => item.slug === slug);
-  if (!project) notFound();
+  let project;
+  try {
+    project = await getProject(slug);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 301) redirect(error.message);
+    if (error instanceof ApiError && error.status === 404) notFound();
+    throw error;
+  }
+  const settings = await getPublicSettingsOrDefaults();
+  const period = [project.started_at, project.ended_at ?? "至今"]
+    .filter(Boolean)
+    .join(" — ");
+  const projectJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    name: project.title,
+    description: project.summary,
+    codeRepository: project.repo_url,
+    url: project.demo_url,
+    author: { "@type": "Person", name: settings.authorName },
+  }).replace(/</g, "\\u003c");
+
   return (
     <div className="section-shell project-detail page-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: projectJsonLd }} />
       <Link href="/projects" className="back-link">← 返回项目</Link>
       <header>
-        <div className="project-meta"><span>{project.status}</span><span>{project.period}</span></div>
+        <div className="project-meta"><span>{project.status}</span><span>{period}</span></div>
         <h1>{project.title}</h1>
         <p>{project.summary}</p>
-        <div className="tag-row">{project.stack.map((item) => <span key={item}>{item}</span>)}</div>
+        <div className="tag-row">
+          {project.tags.map((item) => <span key={item}>{item}</span>)}
+        </div>
+        {project.cover ? (
+          <ZoomableImage
+            src={`/api/v1/media/${project.cover.storage_key}`}
+            alt={project.cover.alt_text ?? project.title}
+          />
+        ) : null}
       </header>
       <div className="project-facts">
-        <div><span>我的职责</span><strong>{project.role}</strong></div>
-        <div><span>关键难点</span><strong>{project.challenge}</strong></div>
-        <div><span>项目结果</span><strong>{project.result}</strong></div>
+        <div><span>项目状态</span><strong>{project.status}</strong></div>
+        <div><span>起止时间</span><strong>{period || "持续维护"}</strong></div>
+        <div><span>保密说明</span><strong>{project.confidentiality_note || "使用脱敏与模拟资料"}</strong></div>
       </div>
-      <section className="case-section">
-        <p className="eyebrow">SYSTEM DESIGN</p>
-        <h2>系统如何组织</h2>
-        <p>系统采用边界清晰的分层结构：界面只负责操作与反馈，应用服务编排测试流程，协议适配器隔离不同设备与接口差异，结果服务统一记录原始数据、断言与运行上下文。</p>
-        <div className="architecture-stack">
-          <div><span>交互层</span><b>用例编排 · 实时状态 · 结果查看</b></div>
-          <div><span>应用层</span><b>执行引擎 · 任务队列 · 报告生成</b></div>
-          <div><span>领域层</span><b>数据帧 · 断言 · 协议适配器</b></div>
-          <div><span>基础设施</span><b>设备驱动 · 数据库 · 文件存储</b></div>
-        </div>
-      </section>
-      <section className="case-section split">
-        <div><p className="eyebrow">DECISION 01</p><h2>适配差异，而不是复制流程</h2><p>统一接口定义连接、发送、接收和关闭能力。测试执行器不知道底层使用的是 Socket、串口还是总线驱动。</p></div>
-        <div><p className="eyebrow">DECISION 02</p><h2>原始数据与解释结果并存</h2><p>既保存原始帧，也保存字段解析、校验结果和断言。这样既便于快速阅读，也保留复核依据。</p></div>
-      </section>
-      <section className="confidentiality-note">
-        <b>公开边界说明</b>
-        <p>本项目页面使用通用架构描述与模拟数据，不展示公司、客户、产品型号、内部协议、真实测试数据或未经授权的界面截图。</p>
-      </section>
+      <ProjectSection eyebrow="BACKGROUND" title="项目背景" source={project.background_md} />
+      <ProjectSection eyebrow="PROBLEM" title="解决的问题" source={project.problem_md} />
+      <ProjectSection eyebrow="MY ROLE" title="我的职责" source={project.role_md} />
+      <ProjectSection eyebrow="SYSTEM DESIGN" title="系统架构" source={project.architecture_md} />
+      <ProjectSection eyebrow="FEATURES" title="核心功能" source={project.features_md} />
+      <ProjectSection eyebrow="CHALLENGES" title="技术难点" source={project.challenges_md} />
+      <ProjectSection eyebrow="SOLUTIONS" title="解决方案" source={project.solutions_md} />
+      <ProjectSection eyebrow="OUTCOMES" title="项目成果" source={project.outcomes_md} />
+      <ProjectSection eyebrow="NEXT" title="后续计划" source={project.next_steps_md} />
+      {project.screenshots.length ? (
+        <section className="case-section">
+          <p className="eyebrow">GALLERY</p>
+          <h2>项目截图</h2>
+          <div className="project-gallery">
+            {project.screenshots.map((image) => (
+              <ZoomableImage
+                key={image.id}
+                src={`/api/v1/media/${image.storage_key}`}
+                alt={image.alt_text ?? `${project.title} 截图`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {project.related_posts.length ? (
+        <section className="case-section">
+          <p className="eyebrow">RELATED POSTS</p>
+          <h2>关联文章</h2>
+          <div className="management-list">
+            {project.related_posts.map((post) => (
+              <Link href={`/articles/${post.slug}`} key={post.id}>{post.title} ↗</Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {project.repo_url || project.demo_url ? (
+        <section className="contact-band">
+          <div>
+            <p className="eyebrow">PROJECT LINKS</p>
+            <h2>进一步了解这个项目</h2>
+          </div>
+          <div className="hero-actions">
+            {project.repo_url ? <a className="button inverted" href={project.repo_url}>代码仓库 ↗</a> : null}
+            {project.demo_url ? <a className="button inverted" href={project.demo_url}>在线演示 ↗</a> : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

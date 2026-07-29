@@ -49,11 +49,12 @@
 ├── /stack
 ├── /timeline
 ├── /about
+├── /contact
 ├── /search
 ├── /rss.xml
 ├── /sitemap.xml
 ├── /robots.txt
-└── /admin                 第二阶段：受保护
+└── /admin                 已实现：受保护内容工作台
     ├── /posts
     ├── /projects
     ├── /taxonomy
@@ -81,9 +82,9 @@
 - 内容模块：文章、分类、标签、Markdown、代码、图表、公式与 SEO。
 - 项目模块：项目档案、技术栈、架构与关联文章。
 - 档案模块：关于、技术栈、时间线。
-- 搜索模块：前台轻量索引；生产环境 PostgreSQL 全文检索。
+- 搜索模块：PostgreSQL `ILIKE`/`pg_trgm` 搜索服务，覆盖文章、项目、分类和标签。
 - 管理模块：认证、编辑、媒体、设置、日志、统计和备份。
-- 基础设施：日志、异常、缓存、对象存储、任务队列和部署。
+- 基础设施：结构化日志、统一异常、持久卷、备份和部署。
 
 ## 8. 目录结构
 
@@ -91,7 +92,7 @@
 engineering-notes/
 ├── app/                    页面、元数据、RSS、Sitemap
 ├── components/             交互与通用组件
-├── data/                   首版示例内容
+├── data/                   非内容型个人资料（技术能力分组）
 ├── public/                 图片与公开静态资源
 ├── backend/
 │   ├── app/
@@ -120,7 +121,7 @@ engineering-notes/
 3. 前台功能：首页、文章、项目、档案、搜索、主题和响应式。
 4. 管理后台：认证、编辑器、分类标签、媒体、设置、备份。
 5. 优化：SEO、性能、安全、测试、错误页和移动端。
-6. 部署：Linux、PostgreSQL、Nginx、Cloudflare、HTTPS、日志和备份。
+6. 部署：Linux、PostgreSQL、Nginx、Let's Encrypt、日志和备份。
 
 ## 11. 重点技术风险
 
@@ -130,5 +131,5 @@ engineering-notes/
 - 全文搜索：中文分词需要 `pg_jieba`、PGroonga 或独立搜索服务评估；MVP 使用标题、摘要和标签索引。
 - 上传安全：检查扩展名、MIME、文件头、尺寸和大小；随机化对象名；公开和私有桶分离。
 - 内容泄密：技术正确不代表可以公开；发布流程必须包含保密审查。
-- 双部署目标：Sites 适合公开前台；完整 FastAPI/PostgreSQL 后端部署到自有 Linux，避免为托管平台强行改写架构。
+- 历史部署元数据：保留既有 Sites 项目标识，但正式域名只运行自有 Linux 上的完整 FastAPI/PostgreSQL 系统。
 - 过度建设：评论、Redis、队列和复杂搜索在流量与场景出现后引入。

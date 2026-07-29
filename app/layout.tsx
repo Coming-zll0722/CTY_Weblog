@@ -1,42 +1,61 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { SiteFrame } from "@/components/SiteFrame";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { getPublicLinksOrEmpty, getPublicSettingsOrDefaults } from "@/lib/api";
+import { getSiteOrigin } from "@/lib/site-origin";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const incoming = await headers();
-  const host = incoming.get("x-forwarded-host") ?? incoming.get("host") ?? "example.com";
+  const [incoming, settings] = await Promise.all([headers(), getPublicSettingsOrDefaults()]);
+  const host = incoming.get("x-forwarded-host") ?? incoming.get("host") ?? "localhost:3000";
   const protocol = incoming.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  const base = new URL(`${protocol}://${host}`);
+  const base = new URL(getSiteOrigin(`${protocol}://${host}`));
   return {
     metadataBase: base,
-    title: { default: "林序 · 工程笔记", template: "%s · 林序" },
-    description: "嵌入式软件测试工程师的技术博客，记录通信接口测试、自动化工具、软件架构与工程实践。",
-    keywords: ["嵌入式软件测试", "自动化测试", "TCP UDP", "CAN", "Python", "C++", "FPGA"],
+    title: { default: settings.siteName, template: `%s · ${settings.siteName}` },
+    description: settings.seoDescription,
+    keywords: settings.seoKeywords,
     openGraph: {
       type: "website",
       locale: "zh_CN",
-      title: "林序 · 工程笔记",
-      description: "从测试需求、协议分析到工具设计与工程实现。",
-      images: [{ url: new URL("/og.png", base), width: 1732, height: 907, alt: "林序工程笔记" }],
+      title: settings.siteName,
+      description: settings.seoDescription,
+      images: [{
+        url: new URL("/og-boundary-engineering.png", base),
+        width: 1731,
+        height: 909,
+        alt: `${settings.siteName}：把技术问题写到可复现`,
+      }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "林序 · 工程笔记",
-      description: "从测试需求、协议分析到工具设计与工程实现。",
-      images: [new URL("/og.png", base)],
+      title: settings.siteName,
+      description: settings.seoDescription,
+      images: [new URL("/og-boundary-engineering.png", base)],
     },
     alternates: { canonical: "/", types: { "application/rss+xml": "/rss.xml" } },
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const [settings, publicLinks] = await Promise.all([
+    getPublicSettingsOrDefaults(),
+    getPublicLinksOrEmpty(),
+  ]);
   return (
     <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        {/* Vinext does not yet expose Next.js font/CSS asset handling for KaTeX. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href="/katex.min.css" />
+      </head>
       <body>
-        <SiteFrame>{children}</SiteFrame>
+        <a className="skip-link" href="#main-content">跳到主要内容</a>
+        <SiteFrame settings={settings} publicLinks={publicLinks}>{children}</SiteFrame>
+        <AnalyticsTracker />
       </body>
     </html>
   );

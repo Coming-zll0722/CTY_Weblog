@@ -1,53 +1,67 @@
 import Link from "next/link";
-import { articles, projects, skillGroups } from "@/data/site";
+import { skillGroups } from "@/data/profile";
+import {
+  formatDate,
+  formatProjectPeriod,
+  getPosts,
+  getProjects,
+} from "@/lib/api";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [articleResponse, projectResponse] = await Promise.all([
+    getPosts(4),
+    getProjects(3),
+  ]);
+  const articles = articleResponse.data;
+  const projects = projectResponse.data;
   return (
     <>
       <section className="hero section-shell">
         <div className="hero-copy">
-          <p className="eyebrow">Embedded Software Test Engineer</p>
+          <p className="eyebrow">边界工程志 · FIELD NOTES</p>
           <h1>
-            把复杂协议，变成
+            把技术问题，
             <br />
-            <span>可验证的工程系统。</span>
+            <span>写到可复现。</span>
           </h1>
           <p className="hero-lead">
-            我是林序，一名电子信息工程背景的软件工程师。专注嵌入式通信接口测试、
-            自动化测试工具与可靠的软件工程实践。
+            一份持续更新的公开工程手记。记录嵌入式通信、测试自动化、软件工具与软硬件边界上的
+            实验、判断和复盘。
           </p>
           <div className="hero-actions">
-            <Link className="button primary" href="/projects">
-              查看项目
+            <Link className="button primary" href="/articles">
+              开始阅读
             </Link>
-            <Link className="button secondary" href="/about">
-              了解我
+            <Link className="button secondary" href="/projects">
+              浏览实践
             </Link>
           </div>
           <div className="status-line">
             <span className="status-dot" />
-            当前：重构通信协议测试平台 · 学习 FPGA 时序分析
+            本期主题：协议测试平台 · FPGA 时序 · AI 辅助验证
           </div>
         </div>
 
-        <div className="hero-panel" aria-label="工作领域概览">
+        <div className="hero-panel" aria-label="本站内容索引">
           <div className="terminal-head">
-            <span>focus.yaml</span>
-            <span>2026.07</span>
+            <span>index.md</span>
+            <span>ISSUE 07</span>
           </div>
           <div className="terminal-body">
-            <p><b>role:</b> embedded_test_engineer</p>
-            <p><b>interfaces:</b></p>
+            <p><b>publication:</b> boundary_engineering</p>
+            <p><b>tracks:</b></p>
             <ul>
-              <li>TCP / UDP / Serial</li>
-              <li>CAN / RS422 / RS485</li>
-              <li>1553B / ARINC 429</li>
-            </ul>
-            <p><b>practice:</b></p>
-            <ul>
-              <li>protocol_analysis</li>
+              <li>embedded_interfaces</li>
               <li>test_automation</li>
-              <li>tool_engineering</li>
+              <li>software_tooling</li>
+            </ul>
+            <p><b>editorial_rules:</b></p>
+            <ul>
+              <li>evidence &gt; opinion</li>
+              <li>reproducible &gt; impressive</li>
+              <li>context before conclusion</li>
             </ul>
           </div>
           <div className="signal-chart" aria-hidden="true">
@@ -58,48 +72,21 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section-shell stat-strip" aria-label="能力摘要">
-        <div><strong>7+</strong><span>类通信接口</span></div>
-        <div><strong>4</strong><span>门主要语言</span></div>
-        <div><strong>6</strong><span>个工程项目</span></div>
-        <div><strong>持续</strong><span>记录与复盘</span></div>
-      </section>
-
-      <section className="section-shell section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">SELECTED WORK</p>
-            <h2>把问题做成工具</h2>
-          </div>
-          <Link className="text-link" href="/projects">全部项目 →</Link>
-        </div>
-        <div className="project-grid">
-          {projects.slice(0, 3).map((project, index) => (
-            <Link className="project-card" href={`/projects/${project.slug}`} key={project.slug}>
-              <div className="project-index">0{index + 1}</div>
-              <div className="project-meta">
-                <span>{project.status}</span>
-                <span>{project.period}</span>
-              </div>
-              <h3>{project.title}</h3>
-              <p>{project.summary}</p>
-              <div className="tag-row">
-                {project.stack.slice(0, 4).map((item) => <span key={item}>{item}</span>)}
-              </div>
-              <span className="card-arrow">↗</span>
-            </Link>
-          ))}
-        </div>
+      <section className="section-shell stat-strip" aria-label="本站内容摘要">
+        <div><strong>{articleResponse.meta.total}</strong><span>篇公开文章</span></div>
+        <div><strong>{projectResponse.meta.total}</strong><span>个实践项目</span></div>
+        <div><strong>{skillGroups.length}</strong><span>条技术主线</span></div>
+        <div><strong>持续</strong><span>实验与复盘</span></div>
       </section>
 
       <section className="section-shell section-block two-column">
         <div>
           <div className="section-heading compact">
             <div>
-              <p className="eyebrow">WRITING</p>
-              <h2>最近在写</h2>
+              <p className="eyebrow">LATEST NOTES</p>
+              <h2>最近更新</h2>
             </div>
-            <Link className="text-link" href="/articles">文章归档 →</Link>
+            <Link className="text-link" href="/articles">进入文章索引 →</Link>
           </div>
           <div className="article-list">
             {articles.slice(0, 4).map((article) => (
@@ -110,29 +97,32 @@ export default function Home() {
                   <p>{article.summary}</p>
                 </div>
                 <aside>
-                  <time>{article.date}</time>
-                  <span>{article.readingTime} 分钟</span>
+                  <time>{formatDate(article.published_at)}</time>
+                  <span>{article.reading_time} 分钟</span>
                 </aside>
               </Link>
             ))}
+            {!articles.length ? (
+              <div className="empty-state"><h3>第一篇笔记正在整理</h3><p>实验过程和验证依据会一起发布。</p></div>
+            ) : null}
           </div>
         </div>
 
         <aside className="now-panel">
-          <p className="eyebrow">NOW / Q3</p>
-          <h2>正在推进</h2>
+          <p className="eyebrow">CURRENT ISSUE / 07</p>
+          <h2>本期关注</h2>
           <ol>
             <li>
               <span>01</span>
-              <div><b>协议测试平台 2.0</b><p>统一测试执行、数据记录和报告生成。</p></div>
+              <div><b>协议测试平台</b><p>从测试执行到证据归档，如何形成完整闭环。</p></div>
             </li>
             <li>
               <span>02</span>
-              <div><b>FPGA 基础实验</b><p>从组合逻辑走向时序约束与仿真验证。</p></div>
+              <div><b>FPGA 时序基础</b><p>用小实验理解约束、仿真与验证边界。</p></div>
             </li>
             <li>
               <span>03</span>
-              <div><b>AI 辅助测试</b><p>研究需求到用例的可追溯生成流程。</p></div>
+              <div><b>AI 辅助验证</b><p>讨论生成效率，也记录它不该替代的判断。</p></div>
             </li>
           </ol>
         </aside>
@@ -141,15 +131,45 @@ export default function Home() {
       <section className="section-shell section-block">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">CAPABILITIES</p>
-            <h2>能力不是清单，是使用场景</h2>
+            <p className="eyebrow">PROJECT LAB</p>
+            <h2>把判断放进真实实践</h2>
           </div>
-          <Link className="text-link" href="/stack">完整技术栈 →</Link>
+          <Link className="text-link" href="/projects">全部实践 →</Link>
+        </div>
+        <div className="project-grid">
+          {projects.slice(0, 3).map((project, index) => (
+            <Link className="project-card" href={`/projects/${project.slug}`} key={project.slug}>
+              <div className="project-index">LAB / 0{index + 1}</div>
+              <div className="project-meta">
+                <span>{project.status}</span>
+                <span>{formatProjectPeriod(project.started_at, project.ended_at)}</span>
+              </div>
+              <h3>{project.title}</h3>
+              <p>{project.summary}</p>
+              <div className="tag-row">
+                {project.tags.slice(0, 4).map((item) => <span key={item}>{item}</span>)}
+              </div>
+              <span className="card-arrow">↗</span>
+            </Link>
+          ))}
+          {!projects.length ? (
+            <div className="empty-state"><h3>实践记录正在整理</h3><p>只发布可以说明问题、复现过程的项目。</p></div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="section-shell section-block">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">TECHNOLOGY MAP</p>
+            <h2>沿着问题建立知识地图</h2>
+          </div>
+          <Link className="text-link" href="/stack">查看完整地图 →</Link>
         </div>
         <div className="capability-grid">
           {skillGroups.slice(0, 4).map((group) => (
             <article key={group.title}>
-              <span className="capability-no">{group.no}</span>
+              <span className="capability-no">TRACK / {group.no}</span>
               <h3>{group.title}</h3>
               <p>{group.description}</p>
               <div>{group.skills.slice(0, 5).join(" · ")}</div>
@@ -160,11 +180,14 @@ export default function Home() {
 
       <section className="section-shell contact-band">
         <div>
-          <p className="eyebrow">LET&apos;S CONNECT</p>
-          <h2>欢迎交流工程实践与项目合作。</h2>
-          <p>如果你对嵌入式测试、工具开发或这份技术档案感兴趣，可以从这里开始。</p>
+          <p className="eyebrow">FOLLOW THE LOG</p>
+          <h2>持续更新，不追赶热度。</h2>
+          <p>通过 RSS 获取新文章，也可以从时间线查看本站正在研究和修订的内容。</p>
         </div>
-        <a className="button inverted" href="mailto:hello@example.com">hello@example.com ↗</a>
+        <div className="band-actions">
+          <a className="button inverted" href="/rss.xml">订阅 RSS ↗</a>
+          <Link className="button ghost-inverted" href="/timeline">查看时间线</Link>
+        </div>
       </section>
     </>
   );

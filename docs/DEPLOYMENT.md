@@ -1,66 +1,182 @@
-# Linux 部署、Cloudflare 与备份
+# Ubuntu 24.04 生产部署、备份与回滚
 
-## 1. 推荐环境
+正式环境为 `devlelin.xyz` → `111.229.86.99`，不使用 Cloudflare。应用目录固定为
+`/opt/engineering-notes`。PostgreSQL 只加入 Docker 内部网络；FastAPI 和前端仅发布
+到宿主机 `127.0.0.1`；只有宿主机 Nginx 监听公网 80/443。
 
-- Ubuntu 24.04 LTS
-- 2 vCPU / 4 GB 内存起步
-- PostgreSQL 16
-- Docker Engine 与 Compose v2
-- Nginx 1.24+
-- Cloudflare DNS / CDN / WAF
+## 1. 上线前置条件
 
-低流量个人站点可先不部署 Redis。数据库和上传目录必须位于持久化卷。
+1. 在 DNSPod 将根域名 A 记录指向 `111.229.86.99`，删除或停用当前 Cloudflare
+   Anycast A/AAAA 记录。若需要 `www`，应先增加记录并同步调整 Nginx 和证书；当前
+   配置只接受根域名。
+2. 为部署人员配置 SSH 公钥登录。不要把私钥、密码或 Token 放进仓库。
+3. 云防火墙和 UFW 只开放 SSH、80、443；不得开放 3000、5432、8000。
+4. 确认 `/opt/engineering-notes` 的现有内容、Docker Volume 和最近备份。若已存在
+   生产数据，不得重新初始化或删除 Volume。
 
-## 2. 发布步骤
+推荐资源为 2 vCPU、4 GiB 内存和足够的独立备份空间。需要 Docker Engine 29、
+Docker Compose Plugin、宿主机 Nginx、Certbot、Git 和 curl。
 
-1. 准备域名和服务器，创建仅用于部署的低权限用户。
-2. 复制 `.env.example` 为生产环境文件，生成至少 32 字节随机密钥。
-3. 把 `example.com`、示例邮箱和昵称替换为真实值。
-4. 构建并启动容器：`docker compose -f deploy/docker-compose.yml up -d --build`。
-5. 执行迁移：`docker compose -f deploy/docker-compose.yml exec api alembic upgrade head`。
-6. 将 `deploy/nginx.conf` 安装到 Nginx 站点配置并完成证书签发。
-7. 检查首页、文章、项目、404、RSS、Sitemap、登录限流、上传限制和备份。
+## 2. 首次安装
 
-## 3. Cloudflare 建议
+```bash
+sudo install -d -m 0750 -o root -g root /opt/engineering-notes
+sudo git clone <PRIVATE_REPOSITORY_URL> /opt/engineering-notes
+cd /opt/engineering-notes/deploy
+sudo cp .env.production.example .env
+sudo chmod 600 .env
+sudo editor .env
+```
 
-- DNS 记录开启代理，SSL 模式使用 `Full (strict)`。
-- 开启 Always Use HTTPS、HTTP/3、Brotli 和自动压缩。
-- `/assets/*` 缓存一年；HTML 尊重源站 Cache-Control；`/api/admin/*` 和登录接口绕过缓存。
-- 配置 WAF 托管规则和 Bot Fight Mode；对 `/api/v1/auth/login` 建立速率限制。
-- 不开启会改写 JavaScript 的旧式优化；发布后用真实设备验证页面。
-- 配置主域名跳转与 HSTS，确认全部子域已支持 HTTPS 后再启用 includeSubDomains。
+`.env` 只存在于服务器。必须替换数据库密码、应用密钥和管理员初始密码；正式地址
+保持 `https://devlelin.xyz`，`API_ALLOWED_HOSTS` 必须保留内部服务名 `api`。可使用
+以下方式在终端直接生成随机值，避免写入历史：
 
-## 4. 日志与监控
+```bash
+openssl rand -base64 48
+```
 
-- Nginx 访问日志按天轮转，保留 14 天。
-- FastAPI JSON 日志保留 30 天，错误日志可推送到 Sentry 或 OpenTelemetry 后端。
-- 监控首页、`/api/v1/health`、数据库连接、磁盘、证书到期和备份任务。
-- 告警不包含 Token、Cookie、Markdown 正文或用户原始输入。
+首次构建并检查配置：
 
-## 5. 备份与恢复
+```bash
+cd /opt/engineering-notes/deploy
+docker compose config --quiet
+docker compose build
+docker compose up -d postgres migrate api web
+docker compose ps
+curl --fail http://127.0.0.1:8000/api/v1/health
+curl --fail http://127.0.0.1:3000/
+```
 
-- 每日：`pg_dump --format=custom`，保留 14 份。
-- 每周：数据库与媒体清单完整备份，保留 8 份。
-- 每月：加密异地备份，保留 12 份。
-- 媒体对象开启版本控制或生命周期策略；数据库备份与对象清单使用相同时间点标签。
-- 每季度进行一次恢复演练，记录 RPO、RTO 和校验结果。
+Compose 的依赖条件保证启动顺序为 PostgreSQL 健康 → Alembic 完成 → API 健康 →
+前端健康。宿主机 Nginx启用后才对公网提供服务。
 
-恢复流程：
+## 3. HTTPS 与 Nginx
 
-1. 进入维护模式，停止写入；
-2. 校验备份哈希并恢复到新数据库，不覆盖当前库；
-3. 执行迁移兼容性检查和抽样数据校验；
-4. 切换连接、执行烟雾测试；
-5. 保留旧数据库，确认稳定后再按策略销毁。
+确认 DNS 已从公网解析到本机后签发 Let's Encrypt 证书。首次签发时，如果 80 端口
+已被 Nginx 占用且没有可用的 ACME 站点，短暂停止 Nginx：
 
-## 6. 发布验证
+```bash
+sudo systemctl stop nginx
+sudo certbot certonly --standalone \
+  --domain devlelin.xyz \
+  --email admin@lelin.dev \
+  --agree-tos --no-eff-email
+sudo systemctl start nginx
+```
 
-- 公开页面状态码与 Canonical 正确；
-- 管理页面未登录返回 401/重定向；
-- HTTPS、CSP、HSTS、X-Content-Type-Options 和 Referrer-Policy 正确；
-- 404 不返回 200；
-- robots、sitemap 和 RSS 可访问；
-- 数据库迁移为最新；
-- 备份任务成功且可读取；
-- 移动端导航、搜索和深浅色正常；
-- Lighthouse 四项达到目标或记录例外。
+安装经过版本控制的站点和轮转规则：
+
+```bash
+cd /opt/engineering-notes/deploy
+sudo cp nginx-host.conf /etc/nginx/sites-available/engineering-notes
+sudo ln -sfn /etc/nginx/sites-available/engineering-notes \
+  /etc/nginx/sites-enabled/engineering-notes
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo cp logrotate-engineering-notes /etc/logrotate.d/engineering-notes
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot renew --dry-run
+```
+
+Nginx 配置完成 HTTPS 跳转、压缩、安全响应头、静态资源缓存和登录/访问统计限流。
+访问日志只保留时间、请求 ID、方法、无查询字符串的路径、状态、字节数和耗时；
+不记录 IP、Cookie、Token、Referer、User-Agent、正文或查询参数。
+
+## 4. 初始化管理员
+
+在服务器 `.env` 中设置一次性初始密码后执行：
+
+```bash
+cd /opt/engineering-notes/deploy
+docker compose --profile tools run --rm init-admin
+```
+
+命令可重复执行且不会覆盖已存在用户。首次登录后立即修改密码；不要在终端输出、
+聊天、文档或 Git 中记录密码。管理员邮箱默认由服务器环境设为 `admin@lelin.dev`。
+
+## 5. 日常发布
+
+先确认目录、数据库容器和持久卷状态：
+
+```bash
+cd /opt/engineering-notes
+git status --short
+cd deploy
+docker compose ps
+docker volume ls --filter name=engineering-notes
+bash ./scripts/deploy.sh
+```
+
+`deploy.sh` 会在已有数据库上先生成自定义格式备份和 SHA-256，再构建镜像、运行迁移
+并检查 API/前端健康。失败时只回退应用镜像，不降级迁移、不覆盖数据库文件。
+
+查看服务和日志：
+
+```bash
+cd /opt/engineering-notes/deploy
+docker compose ps
+docker compose logs --since 30m --tail 200 api web migrate postgres
+sudo journalctl -u nginx --since "30 minutes ago"
+```
+
+Compose 使用 `json-file` 轮转（每文件 10 MiB、保留 5 个），Nginx 日志每日轮转并
+保留 14 期。排障输出不得复制包含凭据或个人信息的环境文件。
+
+## 6. 备份与恢复演练
+
+手工备份：
+
+```bash
+cd /opt/engineering-notes/deploy
+bash ./scripts/backup.sh
+```
+
+备份保存在 `/opt/engineering-notes/var/backups`，权限为仅部署用户可读，并包含
+`.sha256`。该目录必须按组织策略加密复制到异机或对象存储；Docker Volume 不是
+异地备份。
+
+先在临时、无网络、独立 Volume 的 PostgreSQL 容器验证恢复：
+
+```bash
+cd /opt/engineering-notes/deploy
+bash ./scripts/restore-isolated.sh \
+  /opt/engineering-notes/var/backups/engineering-notes-YYYYMMDDTHHMMSSZ.dump
+```
+
+脚本核验摘要、恢复 Alembic 版本和表数量，完成后只删除本次随机命名的临时容器与
+临时 Volume。应用内恢复接口同样要求 `RESTORE_DATABASE_URL` 指向与生产库不同的
+隔离数据库；禁止直接对生产数据库执行 `pg_restore --clean`。
+
+真正的灾难恢复应在维护窗口中进行：停止写流量、再次备份当前库、创建新数据库或
+新 Volume、完成隔离恢复及验收，再显式切换连接地址。不要原地覆盖生产库。
+
+## 7. 应用回滚
+
+发布脚本会输出 UTC 发布编号。只有相应的回滚镜像存在时才执行：
+
+```bash
+cd /opt/engineering-notes/deploy
+bash ./scripts/rollback.sh YYYYMMDDTHHMMSSZ
+```
+
+回滚前仍会备份当前数据库；命令只切换 API/前端镜像，不恢复旧数据库、不执行
+Alembic downgrade，也不触碰上传和备份 Volume。若新迁移与旧代码不向后兼容，
+必须先制定前向修复迁移。
+
+## 8. 上线验收
+
+```bash
+curl -I http://devlelin.xyz/
+curl --fail https://devlelin.xyz/api/v1/health
+curl --fail https://devlelin.xyz/robots.txt
+curl --fail https://devlelin.xyz/sitemap.xml
+curl --fail https://devlelin.xyz/rss.xml
+curl -I https://devlelin.xyz/assets/
+ss -lntp
+docker compose ps
+```
+
+还需从公网访问首页、文章、项目、搜索和 `/admin`，检查 HTML canonical/SSR 内容、
+TLS 证书、安全头、静态缓存；重启 API 后核验已上传文件；执行一次隔离恢复；最后
+运行密钥扫描并确认 Git 不包含 `.env`、证书、上传、数据库或备份。
