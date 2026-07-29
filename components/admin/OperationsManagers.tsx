@@ -212,15 +212,15 @@ export function OperationsManager({ csrf, onError }: ManagerProps) {
       <section className="admin-editor">
         <h3>网站与 SEO 设置</h3>
         <p>这里的公开信息会直接用于网站页眉、页脚、联系入口和搜索引擎元数据。</p>
-        <label>站点名称<input value={settingValue("public.site_name", "边界工程志")} onChange={(change) => setSettingValue("public.site_name", change.target.value)} /></label>
+        <label>站点名称<input value={settingValue("public.site_name", "从头越.log")} onChange={(change) => setSettingValue("public.site_name", change.target.value)} /></label>
         <label>作者名称<input value={settingValue("public.author_name", "林序")} onChange={(change) => setSettingValue("public.author_name", change.target.value)} /></label>
-        <label>品牌缩写<input maxLength={6} value={settingValue("public.brand_mark", "BND")} onChange={(change) => setSettingValue("public.brand_mark", change.target.value)} /></label>
-        <label>站点简介<textarea rows={3} value={settingValue("public.site_description", "记录软件、硬件与验证之间的工程实践。")} onChange={(change) => setSettingValue("public.site_description", change.target.value)} /></label>
+        <label>品牌缩写<input maxLength={6} value={settingValue("public.brand_mark", "LOG")} onChange={(change) => setSettingValue("public.brand_mark", change.target.value)} /></label>
+        <label>站点简介<textarea rows={3} value={settingValue("public.site_description", "记录技术实践、项目开发与持续学习。")} onChange={(change) => setSettingValue("public.site_description", change.target.value)} /></label>
         <label>SEO 描述<textarea rows={3} value={settingValue("public.seo_description", "嵌入式软件测试工程师的技术博客。")} onChange={(change) => setSettingValue("public.seo_description", change.target.value)} /></label>
         <label>SEO 关键词（逗号分隔）<input value={settingValue("public.seo_keywords", "嵌入式软件测试, 自动化测试")} onChange={(change) => setSettingValue("public.seo_keywords", change.target.value.split(",").map((item) => item.trim()).filter(Boolean))} /></label>
         <label>联系邮箱<input type="email" placeholder="从服务器环境或公开设置填写" value={settingValue("public.contact_email")} onChange={(change) => setSettingValue("public.contact_email", change.target.value)} /></label>
         <label>GitHub 网址<input type="url" placeholder="https://github.com/你的用户名" value={settingValue("public.github_url")} onChange={(change) => setSettingValue("public.github_url", change.target.value)} /></label>
-        <label>页脚说明<input value={settingValue("public.footer_note", "写作、实验与持续修订")} onChange={(change) => setSettingValue("public.footer_note", change.target.value)} /></label>
+        <label>页脚说明<input value={settingValue("public.footer_note", "内容经过脱敏处理")} onChange={(change) => setSettingValue("public.footer_note", change.target.value)} /></label>
         <details>
           <summary>高级 JSON 设置</summary>
           <textarea rows={12} aria-label="高级 JSON 设置" value={settings} onChange={(change) => setSettings(change.target.value)} spellCheck={false} />

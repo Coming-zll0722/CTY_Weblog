@@ -104,16 +104,16 @@ export type PublicLink = {
 };
 
 export const defaultPublicSettings: PublicSettings = {
-  siteName: "边界工程志",
+  siteName: "从头越.log",
   authorName: "林序",
-  brandMark: "BND",
-  siteDescription: "记录软件、硬件与验证之间的工程实践。",
+  brandMark: "LOG",
+  siteDescription: "记录技术实践、项目开发与持续学习。",
   seoDescription:
-    "边界工程志：关于嵌入式通信、测试自动化、软件工具与数字系统的长期技术博客。",
+    "从头越.log：记录嵌入式通信测试、自动化工具、软件架构与工程实践的个人技术博客。",
   seoKeywords: ["嵌入式软件测试", "自动化测试", "TCP UDP", "CAN", "Python", "C++", "FPGA"],
   contactEmail: "",
   githubUrl: "",
-  footerNote: "写作、实验与持续修订",
+  footerNote: "内容经过脱敏处理",
 };
 
 type ApiEnvelope<T> = { success: true; data: T };

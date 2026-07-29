@@ -22,17 +22,17 @@ export async function generateMetadata(): Promise<Metadata> {
       title: settings.siteName,
       description: settings.seoDescription,
       images: [{
-        url: new URL("/og-boundary-engineering.png", base),
-        width: 1731,
-        height: 909,
-        alt: `${settings.siteName}：把技术问题写到可复现`,
+        url: new URL("/og.png", base),
+        width: 1734,
+        height: 907,
+        alt: `${settings.siteName}：记录技术，也记录问题如何被解决`,
       }],
     },
     twitter: {
       card: "summary_large_image",
       title: settings.siteName,
       description: settings.seoDescription,
-      images: [new URL("/og-boundary-engineering.png", base)],
+      images: [new URL("/og.png", base)],
     },
     alternates: { canonical: "/", types: { "application/rss+xml": "/rss.xml" } },
   };

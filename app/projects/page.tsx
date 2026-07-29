@@ -3,8 +3,8 @@ import Link from "next/link";
 import { formatProjectPeriod, getProjects } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "实践项目",
-  description: "用于承载技术判断、实验过程与验证结果的工程实践。",
+  title: "工程项目",
+  description: "嵌入式通信测试、工具开发与个人工程项目。",
   alternates: { canonical: "/projects" },
 };
 
@@ -22,9 +22,9 @@ export default async function ProjectsPage({
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
-        <p className="eyebrow">PROJECT LAB / 项目</p>
-        <h1>让技术判断接受真实约束。</h1>
-        <p>项目不是成果陈列，而是文章观点的实践样本。这里记录问题定义、架构取舍、实现过程与验证结果。</p>
+        <p className="eyebrow">PROJECTS / 项目</p>
+        <h1>从需求到交付的完整实践。</h1>
+        <p>关注问题定义、架构取舍、实现过程与验证结果。涉及工作内容均使用模拟数据和重新绘制的模型。</p>
       </header>
       <div className="project-grid full">
         {projects.map((project, index) => (

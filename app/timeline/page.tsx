@@ -3,7 +3,7 @@ import { formatDate, getTimeline } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "时间线",
-  description: "文章修订、项目迭代与学习方向的公开更新日志。",
+  description: "学习、工作、项目与技术方向的持续记录。",
   alternates: { canonical: "/timeline" },
 };
 
@@ -14,9 +14,9 @@ export default async function TimelinePage() {
   return (
     <div className="section-shell page-shell timeline-page">
       <header className="page-heading">
-        <p className="eyebrow">CHANGELOG / 时间线</p>
-        <h1>记录变化，也保留未完成。</h1>
-        <p>这里是本站的公开更新日志：文章修订、项目迭代、实验进展，以及研究方向发生变化的原因。</p>
+        <p className="eyebrow">TIMELINE / 时间线</p>
+        <h1>能力来自连续的积累。</h1>
+        <p>记录学习、项目和技术方向的变化，也保留每个阶段尚未解决的问题。</p>
       </header>
       <div className="timeline">
         {timeline.map((event, index) => (

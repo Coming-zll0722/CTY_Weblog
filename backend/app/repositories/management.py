@@ -19,13 +19,13 @@ from app.models import (
 
 _settings = get_settings()
 PUBLIC_SETTING_DEFAULTS: dict[str, Any] = {
-    "public.site_name": "边界工程志",
+    "public.site_name": "从头越.log",
     "public.author_name": "林序",
-    "public.brand_mark": "BND",
-    "public.site_description": "记录软件、硬件与验证之间的工程实践。",
+    "public.brand_mark": "LOG",
+    "public.site_description": "记录技术实践、项目开发与持续学习。",
     "public.seo_description": (
-        "边界工程志：关于嵌入式通信、测试自动化、"
-        "软件工具与数字系统的长期技术博客。"
+        "从头越.log：记录嵌入式通信测试、自动化工具、"
+        "软件架构与工程实践的个人技术博客。"
     ),
     "public.seo_keywords": [
         "嵌入式软件测试",
@@ -38,7 +38,7 @@ PUBLIC_SETTING_DEFAULTS: dict[str, Any] = {
     ],
     "public.contact_email": _settings.public_contact_email or "",
     "public.github_url": _settings.public_github_url or "",
-    "public.footer_note": "写作、实验与持续修订",
+    "public.footer_note": "内容经过脱敏处理",
 }
 PUBLIC_SETTING_KEYS = frozenset(PUBLIC_SETTING_DEFAULTS)
 PUBLIC_STRING_LIMITS = {

@@ -4,7 +4,7 @@ import { formatDate, getCategories, getPosts } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "技术文章",
-  description: "关于嵌入式通信、测试自动化、软件工具与数字系统的工程笔记。",
+  description: "嵌入式软件测试、工具开发、网络通信、FPGA 与软件工程文章。",
   alternates: { canonical: "/articles" },
 };
 
@@ -25,9 +25,9 @@ export default async function ArticlesPage({
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
-        <p className="eyebrow">FIELD NOTES / 文章</p>
-        <h1>从问题现场开始写。</h1>
-        <p>实验记录、问题排查、项目复盘与概念辨析。重点不是给出标准答案，而是说明结论如何被验证。</p>
+        <p className="eyebrow">WRITING / 文章</p>
+        <h1>工程问题，完整记录。</h1>
+        <p>技术教程、问题排查、项目复盘与学习笔记。重点记录为什么这样做，以及如何验证结果。</p>
       </header>
       <div className="filter-row" aria-label="文章分类">
         <Link className="selected" href="/articles">全部</Link>

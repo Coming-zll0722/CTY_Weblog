@@ -8,9 +8,10 @@ import type { PublicLink, PublicSettings } from "@/lib/api";
 const navigation = [
   ["文章", "/articles"],
   ["项目", "/projects"],
-  ["技术地图", "/stack"],
+  ["技术栈", "/stack"],
   ["时间线", "/timeline"],
-  ["关于本站", "/about"],
+  ["关于", "/about"],
+  ["联系", "/contact"],
 ] as const;
 
 export function SiteFrame({
@@ -100,14 +101,14 @@ export function SiteFrame({
             <p>{settings.siteDescription}</p>
           </div>
           <div>
-            <b>内容索引</b>
+            <b>浏览</b>
             <Link href="/articles">文章</Link>
             <Link href="/projects">项目</Link>
-            <Link href="/stack">技术地图</Link>
             <Link href="/timeline">时间线</Link>
+            <Link href="/contact">联系</Link>
           </div>
           <div>
-            <b>关注更新</b>
+            <b>联系</b>
             {settings.githubUrl ? (
               <a href={settings.githubUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
             ) : null}
@@ -123,7 +124,7 @@ export function SiteFrame({
           </div>
           <div className="footer-note">
             <span>© {new Date().getFullYear()} {settings.authorName}</span>
-            <span>写作、实验与持续修订</span>
+            <span>{settings.footerNote}</span>
           </div>
         </div>
       </footer>

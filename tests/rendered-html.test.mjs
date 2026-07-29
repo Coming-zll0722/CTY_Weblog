@@ -138,7 +138,7 @@ test("server-renders the technical publication home page", async () => {
   assert.match(html, /settings@example\.com/);
   assert.match(html, /公开设置已生效/);
   assert.match(html, /工程资料/);
-  assert.match(html, /把技术问题/);
+  assert.match(html, /记录技术/);
   assert.match(html, /嵌入式通信协议自动化测试平台/);
   assert.match(html, /2025 — 至今/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
@@ -146,10 +146,10 @@ test("server-renders the technical publication home page", async () => {
 
 test("server-renders core public routes", async () => {
   for (const [path, expected] of [
-    ["/articles", "问题现场"],
-    ["/projects", "真实约束"],
-    ["/stack", "彼此连接"],
-    ["/about", "答案如何成立"],
+    ["/articles", "工程问题"],
+    ["/projects", "完整实践"],
+    ["/stack", "实际使用"],
+    ["/about", "软硬件边界"],
   ]) {
     const response = await render(path);
     assert.equal(response.status, 200, path);
