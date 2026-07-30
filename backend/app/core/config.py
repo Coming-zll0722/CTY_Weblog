@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     app_env: str = "development"
-    app_name: str = "Engineering Notes API"
+    app_name: str = "CTY Log API"
     api_prefix: str = "/api/v1"
     database_url: str = "postgresql+asyncpg://blog:change-me@localhost:5432/blog"
     secret_key: str = Field(min_length=32, default="development-only-secret-change-me")

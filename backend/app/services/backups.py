@@ -58,7 +58,7 @@ async def create_database_backup(
     settings = get_settings()
     root = settings.backup_root.resolve()
     root.mkdir(parents=True, exist_ok=True)
-    storage_name = f"engineering-notes-{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid4().hex[:8]}.dump"
+    storage_name = f"cty-log-{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid4().hex[:8]}.dump"
     destination = (root / storage_name).resolve()
     if root not in destination.parents:
         raise AppError(400, "INVALID_BACKUP_PATH", "备份路径无效。")

@@ -39,7 +39,7 @@ Use Vitest with Testing Library for `*.test.ts`/`*.test.tsx`, Node's runner for 
 
 ## Commit & Pull Request Guidelines
 
-History uses concise, imperative subjects (for example, `Build professional engineering notes site`). Keep commits focused. Pull requests should explain the change and validation, link issues, call out migrations or configuration changes, and include screenshots for UI work.
+History uses concise, imperative subjects (for example, `Maintain CTY Log site`). Keep commits focused. Pull requests should explain the change and validation, link issues, call out migrations or configuration changes, and include screenshots for UI work.
 
 ## Security & Configuration
 
@@ -88,7 +88,7 @@ TypeScript 启用严格模式。使用两个空格缩进、双引号和分号。
 
 ## 提交与拉取请求指南
 
-历史提交使用简洁的祈使句主题，例如 `Build professional engineering notes site`。每次提交应聚焦单一改动。拉取请求应说明改动内容和验证方式、关联相关问题、指出数据库迁移或配置变更，并为 UI 改动附上截图。
+历史提交使用简洁的祈使句主题，例如 `Maintain CTY Log site`。每次提交应聚焦单一改动。拉取请求应说明改动内容和验证方式、关联相关问题、指出数据库迁移或配置变更，并为 UI 改动附上截图。
 
 ## 安全与配置
 

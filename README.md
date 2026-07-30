@@ -55,7 +55,7 @@ python -m pip install --require-hashes -r requirements-dev.lock
 python -m pip install --no-deps -e .
 Copy-Item .env.example .env
 alembic upgrade head
-engineering-notes seed
+cty-log seed
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -65,7 +65,8 @@ uvicorn app.main:app --reload --port 8000
 - 用本地随机值替换 `SECRET_KEY`。
 - 用本地管理员邮箱和至少 12 位密码替换 `INITIAL_ADMIN_EMAIL`、`INITIAL_ADMIN_PASSWORD`。
 
-`engineering-notes seed` 可重复运行，不会重复创建示例内容。接口文档位于 `http://localhost:8000/docs`。
+`cty-log seed` 可重复运行，不会重复创建示例内容。为兼容旧环境，`engineering-notes seed`
+仍然可用。接口文档位于 `http://localhost:8000/docs`。
 种子命令也会创建可在后台“设置与运维”中修改的站点名称、作者、SEO 描述、关键词、邮箱和 GitHub 等公开默认值。
 
 ### 3. 启动前端
@@ -156,3 +157,10 @@ Drizzle、D1 示例和绑定已删除，不参与构建或运行。
 `.openai/hosting.json` 是既有 Sites 项目的历史托管元数据，为避免破坏关联而保留，
 但不属于 `devlelin.xyz` 的生产部署，也不承载文章、项目或管理数据。正式系统部署
 在 `/opt/engineering-notes`，由宿主机 Nginx 和 Let's Encrypt 提供 HTTPS。
+
+## 项目标识
+
+本地工程目录统一为 `CTY_log`，前端包名为 `cty-log`，后端包名与命令分别为
+`cty-log-api` 和 `cty-log`。数据库、Cookie、令牌、Docker Volume、服务器目录及
+`.openai/hosting.json` 中已有的标识属于兼容性接口，继续保留原值，避免影响现有数据、
+登录状态、回滚能力和 Sites 项目关联。

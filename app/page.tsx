@@ -22,7 +22,7 @@ export default async function Home() {
     <>
       <section className="hero section-shell">
         <div className="hero-copy">
-          <p className="eyebrow">ENGINEERING NOTES</p>
+          <p className="eyebrow">CTY LOG</p>
           <h1>
             记录技术，也记录
             <br />

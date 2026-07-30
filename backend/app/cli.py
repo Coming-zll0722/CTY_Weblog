@@ -174,7 +174,7 @@ async def seed() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="engineering-notes")
+    parser = argparse.ArgumentParser(prog="cty-log")
     parser.add_argument("command", choices=["create-admin", "seed"])
     args = parser.parse_args()
     if args.command == "create-admin":

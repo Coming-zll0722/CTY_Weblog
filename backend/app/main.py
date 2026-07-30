@@ -17,7 +17,7 @@ from app.core.errors import AppError
 
 settings = get_settings()
 logging.basicConfig(level=settings.log_level, format="%(message)s")
-logger = logging.getLogger("engineering-notes")
+logger = logging.getLogger("cty-log")
 
 app = FastAPI(
     title=settings.app_name,
