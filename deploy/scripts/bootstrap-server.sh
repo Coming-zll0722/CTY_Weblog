@@ -33,7 +33,8 @@ done
 
 for file in \
   common.sh backup.sh deploy.sh deploy-entrypoint.sh rollback.sh \
-  restore-isolated.sh ssh-entrypoint.sh bootstrap-server.sh; do
+  load-images.sh load-images-entrypoint.sh restore-isolated.sh \
+  ssh-entrypoint.sh bootstrap-server.sh; do
   install -m 0755 -o root -g root \
     "${stage_root}/deploy/scripts/${file}" "${deploy_root}/scripts/${file}"
 done
@@ -56,6 +57,8 @@ fi
 
 install -m 0755 -o root -g root \
   "${deploy_root}/scripts/deploy-entrypoint.sh" /usr/local/sbin/cty-log-deploy
+install -m 0755 -o root -g root \
+  "${deploy_root}/scripts/load-images-entrypoint.sh" /usr/local/sbin/cty-log-load-images
 install -m 0755 -o root -g root \
   "${deploy_root}/scripts/ssh-entrypoint.sh" /usr/local/sbin/cty-log-ssh-entrypoint
 

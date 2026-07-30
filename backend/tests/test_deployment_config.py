@@ -63,6 +63,8 @@ def test_images_and_nginx_have_production_safety_controls() -> None:
     assert "pip install --no-cache-dir --no-deps ." not in api_dockerfile
     assert web_dockerfile.count("FROM ") >= 2
     assert "USER node" in web_dockerfile
+    assert "/app/dist/standalone" in web_dockerfile
+    assert 'CMD ["node", "server.js"]' in web_dockerfile
     for required in (
         "location /api/",
         "location /assets/",
@@ -106,6 +108,7 @@ def test_rollback_recreates_only_application_containers() -> None:
 def test_release_pipeline_uses_immutable_images_and_restricted_ssh() -> None:
     workflow = (PROJECT_ROOT / ".github" / "workflows" / "release.yml").read_text("utf8")
     deploy_script = (DEPLOY_ROOT / "scripts" / "deploy.sh").read_text("utf8")
+    load_script = (DEPLOY_ROOT / "scripts" / "load-images.sh").read_text("utf8")
     ssh_entrypoint = (DEPLOY_ROOT / "scripts" / "ssh-entrypoint.sh").read_text("utf8")
     sudoers = (DEPLOY_ROOT / "sudoers-cty-log-deploy").read_text("utf8")
 
@@ -116,16 +119,23 @@ def test_release_pipeline_uses_immutable_images_and_restricted_ssh() -> None:
     assert "WEB_DIGEST" in workflow
     assert "StrictHostKeyChecking=yes" in workflow
     assert "PasswordAuthentication=no" in workflow
-    assert "GHCR_TOKEN" in workflow
+    assert "docker image save" in workflow
+    assert "gzip -1" in workflow
+    assert '"load $GITHUB_REF_NAME $API_DIGEST $WEB_DIGEST $GITHUB_SHA"' in workflow
 
-    assert "cty-weblog-api@sha256:" in deploy_script
-    assert "cty-weblog-web@sha256:" in deploy_script
-    assert 'IFS= read -r registry_token' in deploy_script
+    assert "cty-log-api:${release_id}" in deploy_script
+    assert "cty-log-web:${release_id}" in deploy_script
+    assert "source_api_image" in deploy_script
+    assert "source_web_image" in deploy_script
     assert "backup.sh" in deploy_script
     assert "alembic downgrade" not in deploy_script
     assert "rollback_apps" in deploy_script
 
+    assert "gzip --decompress --stdout | docker image load" in load_script
+    assert "org.opencontainers.image.revision" in load_script
     assert 'SSH_ORIGINAL_COMMAND' in ssh_entrypoint
-    assert 'operation:-}" != "deploy"' in ssh_entrypoint
+    assert '"${operation:-}" != "deploy"' in ssh_entrypoint
+    assert '"${operation:-}" != "load"' in ssh_entrypoint
     assert "cty-log-deploy" in sudoers
+    assert "cty-log-load-images" in sudoers
     assert "NOPASSWD:" in sudoers

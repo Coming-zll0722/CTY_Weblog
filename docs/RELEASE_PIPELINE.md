@@ -19,7 +19,9 @@ PostgreSQL, uploads, and backups volumes attached after the repository rename.
    the `frontend`, `backend`, and `containers` checks passed.
 4. GitHub Actions builds the API and web images and publishes them to GHCR.
 5. The production job connects with a dedicated forced-command SSH key.
-6. The server pulls both images by immutable digest.
+6. The deployment runner pulls both images by immutable digest and streams the
+   verified images through the forced-command SSH channel. This avoids relying
+   on the production server's route to the GitHub container CDN.
 7. The server creates a PostgreSQL backup and SHA-256 checksum.
 8. Alembic applies forward migrations.
 9. The API and web containers are switched and checked locally and through
@@ -37,8 +39,9 @@ git push origin release-20260730-1
 ```
 
 The production SSH identity cannot open a shell, forward ports, or run
-arbitrary commands. It may only invoke the root-owned release script with
-validated CTY Log GHCR image digests.
+arbitrary commands. It may only load the two release images or invoke the
+root-owned release script with validated CTY Log GHCR image digests and a
+40-character Git revision.
 
 ## Manual rollback
 

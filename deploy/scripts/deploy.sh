@@ -6,38 +6,26 @@ umask 077
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/common.sh"
 
 release_id="${1:-}"
-api_image="${2:-}"
-web_image="${3:-}"
-registry_user="${4:-}"
+api_digest="${2:-}"
+web_digest="${3:-}"
+revision="${4:-}"
 state_root="${PROJECT_ROOT}/var/releases"
 current_state="${state_root}/current.env"
 release_state="${state_root}/${release_id}.env"
+api_image="cty-log-api:${release_id}"
+web_image="cty-log-web:${release_id}"
+source_api_image="ghcr.io/coming-zll0722/cty-weblog-api@${api_digest}"
+source_web_image="ghcr.io/coming-zll0722/cty-weblog-web@${web_digest}"
 
 usage() {
-  echo "Usage: deploy.sh RELEASE_ID API_IMAGE@sha256:DIGEST WEB_IMAGE@sha256:DIGEST REGISTRY_USER" >&2
+  echo "Usage: deploy.sh RELEASE_ID API_DIGEST WEB_DIGEST GIT_REVISION" >&2
   exit 64
 }
 
 [[ "${release_id}" =~ ^release-[A-Za-z0-9._-]+$ ]] || usage
-[[ "${api_image}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-api@sha256:[0-9a-f]{64}$ ]] || usage
-[[ "${web_image}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-web@sha256:[0-9a-f]{64}$ ]] || usage
-[[ "${registry_user}" =~ ^[A-Za-z0-9-]+$ ]] || usage
-
-IFS= read -r registry_token
-if [[ ${#registry_token} -lt 20 ]]; then
-  echo "A short-lived GHCR token must be provided on standard input." >&2
-  exit 65
-fi
-
-cleanup() {
-  registry_token=""
-  docker logout ghcr.io >/dev/null 2>&1 || true
-}
-trap cleanup EXIT
-
-printf '%s' "${registry_token}" \
-  | docker login ghcr.io --username "${registry_user}" --password-stdin >/dev/null
-registry_token=""
+[[ "${api_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || usage
+[[ "${web_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || usage
+[[ "${revision}" =~ ^[0-9a-f]{40}$ ]] || usage
 
 install -d -m 0700 "${state_root}"
 
@@ -54,7 +42,7 @@ fi
 
 valid_runtime_image() {
   local image_ref="$1"
-  [[ "${image_ref}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-(api|web)@sha256:[0-9a-f]{64}$ ]] \
+  [[ "${image_ref}" =~ ^cty-log-(api|web):release-[A-Za-z0-9._-]+$ ]] \
     || [[ "${image_ref}" =~ ^engineering-notes-(api|web):current$ ]]
 }
 
@@ -67,9 +55,24 @@ valid_runtime_image "${previous_web_image}" || {
   exit 66
 }
 
-echo "Pulling immutable release images."
-docker pull "${api_image}" >/dev/null
-docker pull "${web_image}" >/dev/null
+docker image inspect "${api_image}" >/dev/null
+docker image inspect "${web_image}" >/dev/null
+
+for image_ref in "${api_image}" "${web_image}"; do
+  image_source="$(
+    docker image inspect "${image_ref}" \
+      --format '{{ index .Config.Labels "org.opencontainers.image.source" }}'
+  )"
+  image_revision="$(
+    docker image inspect "${image_ref}" \
+      --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}'
+  )"
+  if [[ "${image_source}" != "https://github.com/Coming-zll0722/CTY_Weblog" \
+    || "${image_revision}" != "${revision}" ]]; then
+    echo "Loaded image provenance labels do not match the requested release." >&2
+    exit 67
+  fi
+done
 
 export API_IMAGE="${api_image}"
 export WEB_IMAGE="${web_image}"
@@ -135,6 +138,9 @@ state_tmp="$(mktemp "${state_root}/.release-state.XXXXXX")"
   printf 'RELEASE_ID=%s\n' "${release_id}"
   printf 'API_IMAGE=%s\n' "${api_image}"
   printf 'WEB_IMAGE=%s\n' "${web_image}"
+  printf 'SOURCE_API_IMAGE=%s\n' "${source_api_image}"
+  printf 'SOURCE_WEB_IMAGE=%s\n' "${source_web_image}"
+  printf 'GIT_REVISION=%s\n' "${revision}"
   printf 'DEPLOYED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "${state_tmp}"
 chmod 0600 "${state_tmp}"

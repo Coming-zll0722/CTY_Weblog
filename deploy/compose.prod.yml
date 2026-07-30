@@ -103,7 +103,6 @@ services:
       context: ../backend
       dockerfile: ../deploy/api.Dockerfile
       args:
-        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-http://deb.debian.org}
         PYPI_INDEX_URL: ${PYPI_INDEX_URL:-https://pypi.org/simple}
     restart: unless-stopped
     read_only: true
@@ -157,7 +156,6 @@ services:
       context: ../backend
       dockerfile: ../deploy/api.Dockerfile
       args:
-        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-http://deb.debian.org}
         PYPI_INDEX_URL: ${PYPI_INDEX_URL:-https://pypi.org/simple}
     restart: "no"
     read_only: true
