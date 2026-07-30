@@ -114,8 +114,58 @@ jobs:
           cache-from: type=gha,scope=release-web
           cache-to: type=gha,mode=max,scope=release-web
 
-  deploy:
+  bundle:
     needs: [build-api, build-web]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Create the verified relay bundle
+        env:
+          API_DIGEST: ${{ needs.build-api.outputs.digest }}
+          WEB_DIGEST: ${{ needs.build-web.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          api_ref="${API_IMAGE}@${API_DIGEST}"
+          web_ref="${WEB_IMAGE}@${WEB_DIGEST}"
+          docker pull "$api_ref"
+          docker pull "$web_ref"
+          docker tag "$api_ref" "cty-log-api:$GITHUB_REF_NAME"
+          docker tag "$web_ref" "cty-log-web:$GITHUB_REF_NAME"
+          install -d bundle
+          docker image save \
+              "cty-log-api:$GITHUB_REF_NAME" \
+              "cty-log-web:$GITHUB_REF_NAME" \
+            | gzip -6 > bundle/images.tar.gz
+          {
+            printf 'RELEASE_ID=%s\n' "$GITHUB_REF_NAME"
+            printf 'API_DIGEST=%s\n' "$API_DIGEST"
+            printf 'WEB_DIGEST=%s\n' "$WEB_DIGEST"
+            printf 'GIT_REVISION=%s\n' "$GITHUB_SHA"
+          } > bundle/release.env
+          (
+            cd bundle
+            sha256sum images.tar.gz > images.tar.gz.sha256
+          )
+      - name: Upload the verified relay bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cty-log-${{ github.ref_name }}
+          path: bundle/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  deploy:
+    needs: [build-api, build-web, bundle]
+    if: ${{ vars.DEPLOY_TRANSPORT == 'direct' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: production
