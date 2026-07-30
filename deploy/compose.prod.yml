@@ -1,3 +1,5 @@
+# Keep the original Compose project name so the production database, uploads,
+# and backup volumes survive the CTY Log repository/path rename.
 name: engineering-notes
 
 x-json-logging: &json-logging
@@ -55,7 +57,7 @@ services:
 
   web:
     <<: *app-security
-    image: engineering-notes-web:${IMAGE_TAG:-current}
+    image: ${WEB_IMAGE:-engineering-notes-web:${IMAGE_TAG:-current}}
     build:
       context: ..
       dockerfile: deploy/web.Dockerfile
@@ -96,7 +98,7 @@ services:
 
   api:
     <<: *app-security
-    image: engineering-notes-api:${IMAGE_TAG:-current}
+    image: ${API_IMAGE:-engineering-notes-api:${IMAGE_TAG:-current}}
     build:
       context: ../backend
       dockerfile: ../deploy/api.Dockerfile
@@ -150,7 +152,7 @@ services:
 
   migrate:
     <<: *app-security
-    image: engineering-notes-api:${IMAGE_TAG:-current}
+    image: ${API_IMAGE:-engineering-notes-api:${IMAGE_TAG:-current}}
     build:
       context: ../backend
       dockerfile: ../deploy/api.Dockerfile
@@ -183,7 +185,7 @@ services:
 
   init-admin:
     <<: *app-security
-    image: engineering-notes-api:${IMAGE_TAG:-current}
+    image: ${API_IMAGE:-engineering-notes-api:${IMAGE_TAG:-current}}
     profiles: ["tools"]
     restart: "no"
     read_only: true
@@ -247,5 +249,8 @@ networks:
 
 volumes:
   postgres_data:
+    name: engineering-notes_postgres_data
   uploads:
+    name: engineering-notes_uploads
   backups:
+    name: engineering-notes_backups

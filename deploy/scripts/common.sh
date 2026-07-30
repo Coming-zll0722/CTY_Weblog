@@ -5,8 +5,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 DEPLOY_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 PROJECT_ROOT="$(cd -- "${DEPLOY_DIR}/.." && pwd -P)"
 
-if [[ ! -f "${PROJECT_ROOT}/AGENTS.md" || ! -f "${DEPLOY_DIR}/compose.prod.yml" ]]; then
-  echo "Refusing to run outside the engineering-notes repository." >&2
+if [[ ! -f "${DEPLOY_DIR}/compose.prod.yml" ]]; then
+  echo "Refusing to run outside the CTY Log deployment directory." >&2
   exit 1
 fi
 if [[ ! -f "${DEPLOY_DIR}/.env" ]]; then
@@ -36,4 +36,9 @@ for variable_name in "${required_variables[@]}"; do
 done
 
 cd "${DEPLOY_DIR}"
-compose=(docker compose)
+compose=(
+  docker compose
+  --project-name engineering-notes
+  --env-file "${DEPLOY_DIR}/.env"
+  --file "${DEPLOY_DIR}/compose.prod.yml"
+)

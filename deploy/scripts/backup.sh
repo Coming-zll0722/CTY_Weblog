@@ -15,7 +15,7 @@ mkdir -p "${backup_root}"
 chmod 700 "${PROJECT_ROOT}/var" "${backup_root}"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-destination="${backup_root}/engineering-notes-${timestamp}.dump"
+destination="${backup_root}/cty-log-${timestamp}.dump"
 partial="${destination}.partial"
 
 "${compose[@]}" exec -T postgres \
