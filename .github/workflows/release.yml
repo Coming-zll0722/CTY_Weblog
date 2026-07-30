@@ -117,12 +117,17 @@ jobs:
   deploy:
     needs: [build-api, build-web]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment: production
     permissions:
       contents: read
       packages: read
     steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Prepare the restricted SSH identity
         env:
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
@@ -133,19 +138,25 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$HOME/.ssh/cty-log-deploy"
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 0600 "$HOME/.ssh/cty-log-deploy" "$HOME/.ssh/known_hosts"
-      - name: Deploy immutable images
+      - name: Transfer verified images
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
-          GHCR_TOKEN: ${{ github.token }}
           API_DIGEST: ${{ needs.build-api.outputs.digest }}
           WEB_DIGEST: ${{ needs.build-web.outputs.digest }}
         run: |
           set -Eeuo pipefail
           api_ref="${API_IMAGE}@${API_DIGEST}"
           web_ref="${WEB_IMAGE}@${WEB_DIGEST}"
-          printf '%s\n' "$GHCR_TOKEN" \
+          docker pull "$api_ref"
+          docker pull "$web_ref"
+          docker tag "$api_ref" "cty-log-api:$GITHUB_REF_NAME"
+          docker tag "$web_ref" "cty-log-web:$GITHUB_REF_NAME"
+          docker image save \
+              "cty-log-api:$GITHUB_REF_NAME" \
+              "cty-log-web:$GITHUB_REF_NAME" \
+            | gzip -1 \
             | ssh \
                 -i "$HOME/.ssh/cty-log-deploy" \
                 -p "$DEPLOY_PORT" \
@@ -154,5 +165,28 @@ jobs:
                 -o PasswordAuthentication=no \
                 -o StrictHostKeyChecking=yes \
                 -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+                -o ServerAliveInterval=15 \
+                -o ServerAliveCountMax=20 \
                 "$DEPLOY_USER@$DEPLOY_HOST" \
-                "deploy $GITHUB_REF_NAME $api_ref $web_ref $GITHUB_REPOSITORY_OWNER"
+                "load $GITHUB_REF_NAME $API_DIGEST $WEB_DIGEST $GITHUB_SHA"
+      - name: Deploy transferred images
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          API_DIGEST: ${{ needs.build-api.outputs.digest }}
+          WEB_DIGEST: ${{ needs.build-web.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          ssh \
+            -i "$HOME/.ssh/cty-log-deploy" \
+            -p "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -o ServerAliveInterval=15 \
+            -o ServerAliveCountMax=20 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "deploy $GITHUB_REF_NAME $API_DIGEST $WEB_DIGEST $GITHUB_SHA"

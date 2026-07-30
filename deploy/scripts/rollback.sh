@@ -18,8 +18,11 @@ fi
 # shellcheck disable=SC1090
 source "${release_state}"
 if [[ "${RELEASE_ID}" != "${release_id}" \
-  || ! "${API_IMAGE}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-api@sha256:[0-9a-f]{64}$ \
-  || ! "${WEB_IMAGE}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-web@sha256:[0-9a-f]{64}$ ]]; then
+  || ! "${API_IMAGE}" =~ ^cty-log-api:release-[A-Za-z0-9._-]+$ \
+  || ! "${WEB_IMAGE}" =~ ^cty-log-web:release-[A-Za-z0-9._-]+$ \
+  || ! "${SOURCE_API_IMAGE}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-api@sha256:[0-9a-f]{64}$ \
+  || ! "${SOURCE_WEB_IMAGE}" =~ ^ghcr\.io/coming-zll0722/cty-weblog-web@sha256:[0-9a-f]{64}$ \
+  || ! "${GIT_REVISION}" =~ ^[0-9a-f]{40}$ ]]; then
   echo "Stored release state is invalid." >&2
   exit 65
 fi
