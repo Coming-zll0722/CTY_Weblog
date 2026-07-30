@@ -29,6 +29,12 @@ def test_production_compose_keeps_services_private_and_ordered() -> None:
     assert services["web"]["depends_on"]["api"]["condition"] == "service_healthy"
     assert compose["networks"]["backend"]["internal"] is True
     assert {"postgres_data", "uploads", "backups"} <= compose["volumes"].keys()
+    assert compose["volumes"]["postgres_data"]["name"] == "engineering-notes_postgres_data"
+    assert compose["volumes"]["uploads"]["name"] == "engineering-notes_uploads"
+    assert compose["volumes"]["backups"]["name"] == "engineering-notes_backups"
+    assert services["api"]["image"].startswith("${API_IMAGE:-")
+    assert services["migrate"]["image"].startswith("${API_IMAGE:-")
+    assert services["web"]["image"].startswith("${WEB_IMAGE:-")
     for name in ("postgres", "api", "web", "nginx"):
         assert "healthcheck" in services[name]
         assert services[name]["restart"] == "unless-stopped"
@@ -90,5 +96,36 @@ def test_production_example_allows_the_internal_api_hostname() -> None:
 def test_rollback_recreates_only_application_containers() -> None:
     for script_name in ("deploy.sh", "rollback.sh"):
         script = (DEPLOY_ROOT / "scripts" / script_name).read_text("utf8")
-        assert "--no-build --no-deps --force-recreate api web" in script
+        assert "--no-build" in script
+        assert "--no-deps" in script
+        assert "--pull never" in script
+        assert "--force-recreate api web" in script
         assert "alembic downgrade" not in script
+
+
+def test_release_pipeline_uses_immutable_images_and_restricted_ssh() -> None:
+    workflow = (PROJECT_ROOT / ".github" / "workflows" / "release.yml").read_text("utf8")
+    deploy_script = (DEPLOY_ROOT / "scripts" / "deploy.sh").read_text("utf8")
+    ssh_entrypoint = (DEPLOY_ROOT / "scripts" / "ssh-entrypoint.sh").read_text("utf8")
+    sudoers = (DEPLOY_ROOT / "sudoers-cty-log-deploy").read_text("utf8")
+
+    assert 'tags:\n      - "release-*"' in workflow
+    assert "Required check did not pass" in workflow
+    assert "needs: [build-api, build-web]" in workflow
+    assert "API_DIGEST" in workflow
+    assert "WEB_DIGEST" in workflow
+    assert "StrictHostKeyChecking=yes" in workflow
+    assert "PasswordAuthentication=no" in workflow
+    assert "GHCR_TOKEN" in workflow
+
+    assert "cty-weblog-api@sha256:" in deploy_script
+    assert "cty-weblog-web@sha256:" in deploy_script
+    assert 'IFS= read -r registry_token' in deploy_script
+    assert "backup.sh" in deploy_script
+    assert "alembic downgrade" not in deploy_script
+    assert "rollback_apps" in deploy_script
+
+    assert 'SSH_ORIGINAL_COMMAND' in ssh_entrypoint
+    assert 'operation:-}" != "deploy"' in ssh_entrypoint
+    assert "cty-log-deploy" in sudoers
+    assert "NOPASSWD:" in sudoers
