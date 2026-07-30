@@ -18,8 +18,9 @@ PostgreSQL, uploads, and backups volumes attached after the repository rename.
 3. GitHub Actions verifies that the tagged commit belongs to `main` and that
    the `frontend`, `backend`, and `containers` checks passed.
 4. GitHub Actions builds the API and web images and publishes them to GHCR.
-5. GitHub Actions creates a seven-day, SHA-256-protected relay artifact containing
-   the two images and their immutable digests.
+5. GitHub Actions creates a SHA-256-protected relay bundle containing the two
+   images and their immutable digests. It is attached to the private GitHub
+   Release and retained as a seven-day Actions artifact.
 6. When `DEPLOY_TRANSPORT=direct`, the production job streams the images through
    the dedicated forced-command SSH key. When the international runner-to-server
    route is degraded, download the artifact on a trusted Windows workstation and
