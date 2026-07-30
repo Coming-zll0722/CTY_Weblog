@@ -1,5 +1,5 @@
-from datetime import UTC, datetime
 import re
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -8,8 +8,8 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import AppError
 from app.core.config import get_settings
+from app.core.errors import AppError
 from app.models import (
     OperationLog,
     PageView,

@@ -10,13 +10,13 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
-    func,
     Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column

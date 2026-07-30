@@ -1,8 +1,4 @@
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel
-
-T = TypeVar("T")
 
 
 class ErrorDetail(BaseModel):
@@ -11,7 +7,7 @@ class ErrorDetail(BaseModel):
     request_id: str | None = None
 
 
-class ApiResponse(BaseModel, Generic[T]):
+class ApiResponse[T](BaseModel):
     success: bool = True
     data: T
 
@@ -22,5 +18,5 @@ class PageMeta(BaseModel):
     total: int
 
 
-class PageResponse(ApiResponse[list[T]], Generic[T]):
+class PageResponse[T](ApiResponse[list[T]]):
     meta: PageMeta

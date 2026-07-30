@@ -4,8 +4,8 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.core.security import hash_password
 from app.core.config import get_settings
+from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_session
 from app.main import app

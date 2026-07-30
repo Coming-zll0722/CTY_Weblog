@@ -17,9 +17,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = BACKEND_ROOT.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.core.security import hash_password  # noqa: E402
-from app.db.base import Base  # noqa: E402
-from app.models import Link, Post, Project, SiteSetting, User  # noqa: E402
+from app.core.security import hash_password
+from app.db.base import Base
+from app.models import Link, Post, Project, SiteSetting, User
 
 
 async def initialize(database_url: str) -> None:

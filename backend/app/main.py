@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 import re
 import time
 from collections.abc import Awaitable, Callable
@@ -8,8 +8,8 @@ from uuid import uuid4
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.routes import router
 from app.core.config import get_settings
