@@ -51,6 +51,20 @@ if ($actualChecksum -ne $expectedChecksum.ToLowerInvariant()) {
 
 $sshPath = (Get-Command ssh.exe -ErrorAction Stop).Source
 
+function ConvertTo-NativeArgument {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Value
+    )
+
+    if ($Value -notmatch '[\s"]') {
+        return $Value
+    }
+    $escaped = [regex]::Replace($Value, '(\\*)"', '$1$1\"')
+    $escaped = [regex]::Replace($escaped, '(\\+)$', '$1$1')
+    return '"' + $escaped + '"'
+}
+
 function New-SshProcess {
     param(
         [Parameter(Mandatory)]
@@ -62,7 +76,7 @@ function New-SshProcess {
     $startInfo.FileName = $sshPath
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardInput = $RedirectInput
-    foreach ($argument in @(
+    $arguments = @(
         "-i", $SshPrivateKey,
         "-p", $DeployPort.ToString(),
         "-o", "BatchMode=yes",
@@ -73,9 +87,10 @@ function New-SshProcess {
         "-o", "ServerAliveCountMax=20",
         "$DeployUser@$DeployHost",
         $RemoteCommand
-    )) {
-        $startInfo.ArgumentList.Add($argument)
-    }
+    )
+    $startInfo.Arguments = (
+        $arguments | ForEach-Object { ConvertTo-NativeArgument -Value $_ }
+    ) -join " "
 
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
