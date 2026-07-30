@@ -157,6 +157,7 @@ jobs:
       - name: Publish the verified relay bundle
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -Eeuo pipefail
           gh release create "$GITHUB_REF_NAME" \
@@ -167,6 +168,7 @@ jobs:
             --title "$GITHUB_REF_NAME" \
             --notes "Immutable CTY Log production images and verified relay metadata."
       - name: Upload the verified relay bundle
+        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: cty-log-${{ github.ref_name }}
