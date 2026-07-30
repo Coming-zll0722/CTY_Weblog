@@ -18,15 +18,18 @@ PostgreSQL, uploads, and backups volumes attached after the repository rename.
 3. GitHub Actions verifies that the tagged commit belongs to `main` and that
    the `frontend`, `backend`, and `containers` checks passed.
 4. GitHub Actions builds the API and web images and publishes them to GHCR.
-5. The production job connects with a dedicated forced-command SSH key.
-6. The deployment runner pulls both images by immutable digest and streams the
-   verified images through the forced-command SSH channel. This avoids relying
-   on the production server's route to the GitHub container CDN.
-7. The server creates a PostgreSQL backup and SHA-256 checksum.
-8. Alembic applies forward migrations.
-9. The API and web containers are switched and checked locally and through
+5. GitHub Actions creates a seven-day, SHA-256-protected relay artifact containing
+   the two images and their immutable digests.
+6. When `DEPLOY_TRANSPORT=direct`, the production job streams the images through
+   the dedicated forced-command SSH key. When the international runner-to-server
+   route is degraded, download the artifact on a trusted Windows workstation and
+   run `deploy/scripts/deploy-release-artifact.ps1` to relay the exact same bytes.
+7. The server validates both image provenance labels and the tagged Git revision.
+8. The server creates a PostgreSQL backup and SHA-256 checksum.
+9. Alembic applies forward migrations.
+10. The API and web containers are switched and checked locally and through
    the host Nginx TLS endpoint.
-10. If an application health check fails, the previous application images are
+11. If an application health check fails, the previous application images are
     restored. Database migrations are never downgraded automatically.
 
 Example release:
@@ -42,6 +45,13 @@ The production SSH identity cannot open a shell, forward ports, or run
 arbitrary commands. It may only load the two release images or invoke the
 root-owned release script with validated CTY Log GHCR image digests and a
 40-character Git revision.
+
+Example relay from Windows after extracting the release artifact:
+
+```powershell
+.\deploy\scripts\deploy-release-artifact.ps1 `
+  -ArtifactDirectory C:\path\to\cty-log-release-YYYYMMDD-N
+```
 
 ## Manual rollback
 
