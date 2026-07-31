@@ -69,6 +69,15 @@ uvicorn app.main:app --reload --port 8000
 仍然可用。接口文档位于 `http://localhost:8000/docs`。
 种子命令也会创建可在后台“设置与运维”中修改的站点名称、作者、SEO 描述、关键词、邮箱和 GitHub 等公开默认值。
 
+只导入或补齐内容库时，可在已有管理员的环境中运行：
+
+```powershell
+cty-log seed-content
+```
+
+该命令不会修改管理员、站点设置或已经存在的文章和项目。内容状态与发布前需要作者确认的
+事项记录在 [docs/CONTENT_REVIEW.md](docs/CONTENT_REVIEW.md)。
+
 ### 3. 启动前端
 
 在新的 PowerShell 窗口：
