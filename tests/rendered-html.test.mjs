@@ -6,7 +6,7 @@ const post = {
   title: "从协议分析到自动化执行：网络测试工具的设计方法",
   slug: "tcp-udp-test-platform-design",
   summary: "网络测试工具的设计方法。",
-  content_md: "# 示例正文\n\n## 安全渲染\n\n<script>alert('xss')</script>\n\n```python\nprint('ok')\n```",
+  content_md: "# 示例正文\n\n## 安全渲染\n\n<script>alert('xss')</script>\n\n```python\nprint('ok')\n```\n\n```mermaid\nflowchart LR\n  API --> DB\n```",
   category: "测试工具开发",
   category_slug: "test-tools",
   category_id: null,
@@ -110,18 +110,24 @@ function mockApi(input) {
   );
 }
 
-async function render(path = "/") {
+async function render(path = "/", accept = "text/html") {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => mockApi(input) ?? originalFetch(input, init);
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
   try {
     const { default: worker } = await import(workerUrl.href);
-    return await worker.fetch(
-      new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }),
+    const response = await worker.fetch(
+      new Request(`http://localhost${path}`, { headers: { accept } }),
       { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
       { waitUntil() {}, passThroughOnException() {} },
     );
+    const body = await response.arrayBuffer();
+    return new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -180,4 +186,15 @@ test("renders database Markdown without executable HTML", async () => {
   // Vinext emits its own inline bootstrap scripts. The security boundary here is
   // that untrusted Markdown cannot preserve or execute the submitted payload.
   assert.doesNotMatch(html, /alert\('xss'\)|&lt;script&gt;alert/i);
+});
+
+test("renders Mermaid Markdown during RSC client navigation", async () => {
+  const response = await render(
+    "/articles/tcp-udp-test-platform-design.rsc",
+    "text/x-component",
+  );
+  assert.equal(response.status, 200);
+  const payload = await response.text();
+  assert.match(payload, /tcp-udp-test-platform-design/);
+  assert.doesNotMatch(payload, /"digest":/);
 });

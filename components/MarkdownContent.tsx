@@ -14,7 +14,7 @@ export function MarkdownContent({ source }: { source: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeSanitize, rehypeKatex, rehypePrism]}
+      rehypePlugins={[rehypeSanitize, rehypeKatex, [rehypePrism, { ignoreMissing: true }]]}
       components={{
         pre({ children }) {
           const child = isValidElement(children)
