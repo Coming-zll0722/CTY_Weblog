@@ -10,6 +10,18 @@ import { CopyableCode } from "@/components/CopyableCode";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { headingId } from "@/lib/markdown";
 
+function nodeText(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number" || typeof node === "bigint") {
+    return String(node);
+  }
+  if (Array.isArray(node)) return node.map(nodeText).join("");
+  if (isValidElement(node)) {
+    return nodeText((node as ReactElement<{ children?: ReactNode }>).props.children);
+  }
+  return "";
+}
+
 export function MarkdownContent({ source }: { source: string }) {
   return (
     <ReactMarkdown
@@ -21,10 +33,10 @@ export function MarkdownContent({ source }: { source: string }) {
             ? children as ReactElement<{ className?: string; children?: ReactNode }>
             : null;
           if (child?.props.className?.includes("language-mermaid")) {
-            return <MermaidBlock chart={String(child.props.children).trim()} />;
+            return <MermaidBlock chart={nodeText(child.props.children).trim()} />;
           }
           return (
-            <CopyableCode text={String(child?.props.children ?? "")}>
+            <CopyableCode text={nodeText(child?.props.children)}>
               {children}
             </CopyableCode>
           );
@@ -35,10 +47,10 @@ export function MarkdownContent({ source }: { source: string }) {
             : null;
         },
         h2({ children }) {
-          return <h2 id={headingId(String(children))}>{children}</h2>;
+          return <h2 id={headingId(nodeText(children))}>{children}</h2>;
         },
         h3({ children }) {
-          return <h3 id={headingId(String(children))}>{children}</h3>;
+          return <h3 id={headingId(nodeText(children))}>{children}</h3>;
         },
       }}
     >
