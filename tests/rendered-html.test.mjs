@@ -196,5 +196,7 @@ test("renders Mermaid Markdown during RSC client navigation", async () => {
   assert.equal(response.status, 200);
   const payload = await response.text();
   assert.match(payload, /tcp-udp-test-platform-design/);
+  assert.match(payload, /flowchart LR\\n  API --> DB/);
+  assert.doesNotMatch(payload, /\[object Object\]/);
   assert.doesNotMatch(payload, /"digest":/);
 });
