@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime
 from hashlib import sha256
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
@@ -348,8 +348,8 @@ async def operation_logs(
 
 @admin_router.get("/analytics/overview")
 async def analytics(
-    date_from: date | None = Query(None),
-    date_to: date | None = Query(None),
+    date_from: Annotated[date | None, Query()] = None,
+    date_to: Annotated[date | None, Query()] = None,
     _user: User = Depends(admin_user),
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[dict]:

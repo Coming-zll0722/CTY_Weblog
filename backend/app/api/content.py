@@ -14,10 +14,10 @@ from app.repositories.content import ContentRepository
 from app.schemas.common import ApiResponse, PageMeta, PageResponse
 from app.schemas.post import PostCreate, PostPublish, PostUpdate
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.services.content_cache import public_content_cache
 from app.services.media import ensure_variant, store_image
 from app.services.search import search_content
 from app.services.storage import get_media_storage
-from app.services.content_cache import public_content_cache
 
 router = APIRouter(tags=["content"])
 

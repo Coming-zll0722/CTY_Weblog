@@ -1,6 +1,6 @@
+import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
-import re
 from uuid import UUID
 
 from sqlalchemy import and_, case, delete, func, or_, select
