@@ -29,7 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticPages.map((path) => ({
       url: `${base}${path}`,
-      lastModified: new Date(),
       changeFrequency: path === "" ? "weekly" as const : "monthly" as const,
     })),
     ...articles.map((item) => ({
@@ -44,12 +43,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...categories.map((item) => ({
       url: `${base}/categories/${item.slug}`,
-      lastModified: new Date(),
       changeFrequency: "monthly" as const,
     })),
     ...tags.map((item) => ({
       url: `${base}/tags/${item.slug}`,
-      lastModified: new Date(),
       changeFrequency: "monthly" as const,
     })),
   ];

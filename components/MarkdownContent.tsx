@@ -8,7 +8,7 @@ import remarkMath from "remark-math";
 import { MermaidBlock } from "@/components/MermaidBlock";
 import { CopyableCode } from "@/components/CopyableCode";
 import { ZoomableImage } from "@/components/ZoomableImage";
-import { headingId } from "@/lib/markdown";
+import { createHeadingIdFactory } from "@/lib/markdown";
 
 function nodeText(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") return "";
@@ -23,6 +23,7 @@ function nodeText(node: ReactNode): string {
 }
 
 export function MarkdownContent({ source }: { source: string }) {
+  const nextHeadingId = createHeadingIdFactory();
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
@@ -46,11 +47,14 @@ export function MarkdownContent({ source }: { source: string }) {
             ? <ZoomableImage src={src} alt={alt ?? ""} title={title} />
             : null;
         },
+        h1({ children }) {
+          return <h2 id={nextHeadingId(nodeText(children))}>{children}</h2>;
+        },
         h2({ children }) {
-          return <h2 id={headingId(nodeText(children))}>{children}</h2>;
+          return <h2 id={nextHeadingId(nodeText(children))}>{children}</h2>;
         },
         h3({ children }) {
-          return <h3 id={headingId(nodeText(children))}>{children}</h3>;
+          return <h3 id={nextHeadingId(nodeText(children))}>{children}</h3>;
         },
       }}
     >

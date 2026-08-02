@@ -6,36 +6,56 @@ export type MediaAsset = {
   height: number | null;
 };
 
-export type Post = {
+export type PostListItem = {
   id: string;
   title: string;
   slug: string;
   summary: string;
-  content_md: string;
-  status: "draft" | "published" | "archived";
   category: string;
   category_slug: string;
-  category_id: string | null;
-  cover_media_id: string | null;
   cover: MediaAsset | null;
   tags: string[];
-  tag_ids: string[];
   tag_slugs: string[];
   reading_time: number;
+  series: string | null;
+  published_at: string | null;
+  updated_at: string;
+};
+
+export type Post = PostListItem & {
+  content_md: string;
+  status: "draft" | "published" | "archived";
+  category_id: string | null;
+  cover_media_id: string | null;
+  tag_ids: string[];
   seo_title: string | null;
   seo_description: string | null;
   confidentiality_checked: boolean;
   version: number;
-  published_at: string | null;
-  updated_at: string;
   deleted_at: string | null;
 };
 
-export type Project = {
+export type ProjectListItem = {
   id: string;
   title: string;
   slug: string;
   summary: string;
+  status: string;
+  tags: string[];
+  started_at: string | null;
+  ended_at: string | null;
+  cover_media_id: string | null;
+  cover: MediaAsset | null;
+  featured: boolean;
+  sort_order: number;
+  problem_excerpt: string;
+  role_excerpt: string;
+  decision_excerpt: string;
+  result_excerpt: string;
+  updated_at: string;
+};
+
+export type Project = ProjectListItem & {
   content_md: string;
   background_md: string;
   problem_md: string;
@@ -47,26 +67,23 @@ export type Project = {
   outcomes_md: string;
   next_steps_md: string;
   confidentiality_note: string;
-  status: string;
-  tags: string[];
   tag_ids: string[];
-  started_at: string | null;
-  ended_at: string | null;
   repo_url: string | null;
   demo_url: string | null;
-  cover_media_id: string | null;
-  cover: MediaAsset | null;
   screenshots: MediaAsset[];
   screenshot_media_ids: string[];
   related_posts: { id: string; title: string; slug: string }[];
   related_post_ids: string[];
   is_public: boolean;
   confidentiality_checked: boolean;
-  featured: boolean;
-  sort_order: number;
   version: number;
-  updated_at: string;
   deleted_at: string | null;
+};
+
+export type PostContext = {
+  previous: PostListItem | null;
+  next: PostListItem | null;
+  related: PostListItem[];
 };
 
 export type TimelineEvent = {
@@ -139,10 +156,11 @@ const serverApiBase =
 export const publicApiBase =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
 
-async function apiFetch<T>(path: string): Promise<T> {
+async function apiFetch<T>(path: string, revalidate = 120): Promise<T> {
   const response = await fetch(`${serverApiBase}${path}`, {
     headers: { Accept: "application/json" },
-    cache: "no-store",
+    cache: "force-cache",
+    next: { revalidate },
     redirect: "manual",
   });
   if (response.status >= 300 && response.status < 400) {
@@ -169,7 +187,7 @@ export async function getPosts(
   limit = 20,
   filters: { category?: string; tag?: string; q?: string } = {},
   page = 1,
-): Promise<PageEnvelope<Post>> {
+): Promise<PageEnvelope<PostListItem>> {
   const params = new URLSearchParams({
     page: String(page),
     page_size: String(limit),
@@ -177,7 +195,7 @@ export async function getPosts(
   if (filters.category) params.set("category", filters.category);
   if (filters.tag) params.set("tag", filters.tag);
   if (filters.q) params.set("q", filters.q);
-  return apiFetch<PageEnvelope<Post>>(`/posts?${params}`);
+  return apiFetch<PageEnvelope<PostListItem>>(`/posts?${params}`);
 }
 
 export async function getPost(slug: string): Promise<Post> {
@@ -187,11 +205,18 @@ export async function getPost(slug: string): Promise<Post> {
   return response.data;
 }
 
+export async function getPostContext(slug: string): Promise<PostContext> {
+  const response = await apiFetch<ApiEnvelope<PostContext>>(
+    `/posts/${encodeURIComponent(slug)}/context`,
+  );
+  return response.data;
+}
+
 export async function getProjects(
   limit = 20,
   page = 1,
-): Promise<PageEnvelope<Project>> {
-  return apiFetch<PageEnvelope<Project>>(`/projects?page=${page}&page_size=${limit}`);
+): Promise<PageEnvelope<ProjectListItem>> {
+  return apiFetch<PageEnvelope<ProjectListItem>>(`/projects?page=${page}&page_size=${limit}`);
 }
 
 export async function getProject(slug: string): Promise<Project> {
@@ -228,11 +253,11 @@ async function collectAll<T>(
   return items;
 }
 
-export function getAllPosts(): Promise<Post[]> {
+export function getAllPosts(): Promise<PostListItem[]> {
   return collectAll((page) => getPosts(100, {}, page));
 }
 
-export function getAllProjects(): Promise<Project[]> {
+export function getAllProjects(): Promise<ProjectListItem[]> {
   return collectAll((page) => getProjects(100, page));
 }
 

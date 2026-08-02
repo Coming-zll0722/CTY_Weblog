@@ -1,8 +1,9 @@
 from collections.abc import Iterable
 from datetime import UTC, datetime
+import re
 from uuid import UUID
 
-from sqlalchemy import case, delete, func, or_, select
+from sqlalchemy import and_, case, delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -101,7 +102,7 @@ class ContentRepository:
         )
         posts = list((await self.session.scalars(statement)).all())
         total = int((await self.session.scalar(count_statement)) or 0)
-        return await self._post_dicts(posts), total
+        return await self._post_dicts(posts, include_detail=include_unpublished), total
 
     async def get_post(self, slug: str, include_unpublished: bool = False) -> dict:
         filters = [Post.slug == slug, Post.deleted_at.is_(None)]
@@ -125,6 +126,76 @@ class ContentRepository:
                 raise AppError(301, "MOVED_PERMANENTLY", redirect.target_path)
             raise AppError(404, "POST_NOT_FOUND", "文章不存在。")
         return (await self._post_dicts([post]))[0]
+
+    async def get_post_context(self, slug: str) -> dict:
+        published = [
+            Post.deleted_at.is_(None),
+            Post.status == "published",
+            Post.published_at.is_not(None),
+            Post.published_at <= datetime.now(UTC),
+        ]
+        post = await self.session.scalar(select(Post).where(Post.slug == slug, *published))
+        if not post:
+            raise AppError(404, "POST_NOT_FOUND", "文章不存在。")
+
+        previous = await self.session.scalar(
+            select(Post)
+            .where(
+                *published,
+                Post.id != post.id,
+                or_(
+                    Post.published_at > post.published_at,
+                    and_(Post.published_at == post.published_at, Post.id > post.id),
+                ),
+            )
+            .order_by(Post.published_at.asc(), Post.id.asc())
+            .limit(1)
+        )
+        next_post = await self.session.scalar(
+            select(Post)
+            .where(
+                *published,
+                Post.id != post.id,
+                or_(
+                    Post.published_at < post.published_at,
+                    and_(Post.published_at == post.published_at, Post.id < post.id),
+                ),
+            )
+            .order_by(Post.published_at.desc(), Post.id.desc())
+            .limit(1)
+        )
+        tag_ids = select(PostTag.tag_id).where(PostTag.post_id == post.id)
+        related_ids = (
+            select(PostTag.post_id, func.count(PostTag.tag_id).label("shared_tags"))
+            .where(PostTag.tag_id.in_(tag_ids), PostTag.post_id != post.id)
+            .group_by(PostTag.post_id)
+            .subquery()
+        )
+        related = list(
+            (
+                await self.session.scalars(
+                    select(Post)
+                    .join(related_ids, related_ids.c.post_id == Post.id)
+                    .where(*published)
+                    .order_by(related_ids.c.shared_tags.desc(), Post.published_at.desc())
+                    .limit(3)
+                )
+            ).all()
+        )
+        adjacent = [item for item in (previous, next_post) if item]
+        adjacent_items = {
+            item.id: value
+            for item, value in zip(
+                adjacent,
+                await self._post_dicts(adjacent, include_detail=False),
+                strict=True,
+            )
+        }
+        return {
+            "previous": adjacent_items.get(previous.id) if previous else None,
+            "next": adjacent_items.get(next_post.id) if next_post else None,
+            "related": await self._post_dicts(related, include_detail=False),
+        }
 
     async def create_post(self, payload: PostCreate, author_id: UUID) -> dict:
         values = payload.model_dump(exclude={"tag_ids"})
@@ -264,6 +335,7 @@ class ContentRepository:
         return await self._project_dicts(
             projects,
             include_unpublished_relations=include_unpublished,
+            include_detail=include_unpublished,
         ), total
 
     async def get_project(self, slug: str) -> dict:
@@ -440,7 +512,9 @@ class ContentRepository:
             ]
         )
 
-    async def _post_dicts(self, posts: list[Post]) -> list[dict]:
+    async def _post_dicts(
+        self, posts: list[Post], include_detail: bool = True
+    ) -> list[dict]:
         tags: dict[UUID, list[str]] = {post.id: [] for post in posts}
         tag_slugs: dict[UUID, list[str]] = {post.id: [] for post in posts}
         tag_ids: dict[UUID, list[UUID]] = {post.id: [] for post in posts}
@@ -469,38 +543,50 @@ class ContentRepository:
                 tag_ids[post_id].append(tag_id)
                 tags[post_id].append(name)
                 tag_slugs[post_id].append(slug)
-        return [
+        items = [
             {
                 "id": post.id,
                 "title": post.title,
                 "slug": post.slug,
                 "summary": post.summary,
-                "content_md": post.content_md,
-                "status": post.status,
-                "category_id": post.category_id,
                 "category": categories.get(post.category_id, ("未分类", ""))[0],
                 "category_slug": categories.get(post.category_id, ("未分类", ""))[1],
-                "cover_media_id": post.cover_media_id,
                 "cover": covers.get(post.cover_media_id),
                 "tags": tags[post.id],
                 "tag_slugs": tag_slugs[post.id],
-                "tag_ids": tag_ids[post.id],
                 "reading_time": max(1, round(len(post.content_md) / 500)),
-                "seo_title": post.seo_title,
-                "seo_description": post.seo_description,
-                "confidentiality_checked": post.confidentiality_checked,
-                "version": post.version,
+                "series": next(
+                    (tag for tag in tags[post.id] if "系列" in tag),
+                    None,
+                ),
                 "published_at": post.published_at,
                 "updated_at": post.updated_at,
-                "deleted_at": post.deleted_at,
             }
             for post in posts
         ]
+        if include_detail:
+            for item, post in zip(items, posts, strict=True):
+                item.update(
+                    {
+                        "content_md": post.content_md,
+                        "status": post.status,
+                        "category_id": post.category_id,
+                        "cover_media_id": post.cover_media_id,
+                        "tag_ids": tag_ids[post.id],
+                        "seo_title": post.seo_title,
+                        "seo_description": post.seo_description,
+                        "confidentiality_checked": post.confidentiality_checked,
+                        "version": post.version,
+                        "deleted_at": post.deleted_at,
+                    }
+                )
+        return items
 
     async def _project_dicts(
         self,
         projects: list[Project],
         include_unpublished_relations: bool = False,
+        include_detail: bool = True,
     ) -> list[dict]:
         tags: dict[UUID, list[str]] = {project.id: [] for project in projects}
         tag_ids: dict[UUID, list[UUID]] = {project.id: [] for project in projects}
@@ -518,6 +604,7 @@ class ContentRepository:
             for project_id, tag_id, name in rows:
                 tag_ids[project_id].append(tag_id)
                 tags[project_id].append(name)
+        if tags and include_detail:
             media_rows = await self.session.execute(
                 select(ProjectMedia.project_id, MediaFile)
                 .join(MediaFile, MediaFile.id == ProjectMedia.media_id)
@@ -550,11 +637,20 @@ class ContentRepository:
                 related_posts[project_id].append(
                     {"id": post.id, "title": post.title, "slug": post.slug}
                 )
-        fields = (
+        list_fields = (
             "id",
             "title",
             "slug",
             "summary",
+            "status",
+            "cover_media_id",
+            "started_at",
+            "ended_at",
+            "featured",
+            "sort_order",
+            "updated_at",
+        )
+        detail_fields = (
             "content_md",
             "background_md",
             "problem_md",
@@ -566,37 +662,51 @@ class ContentRepository:
             "outcomes_md",
             "next_steps_md",
             "confidentiality_note",
-            "status",
-            "cover_media_id",
-            "started_at",
-            "ended_at",
             "repo_url",
             "demo_url",
             "is_public",
             "confidentiality_checked",
-            "featured",
-            "sort_order",
             "version",
-            "updated_at",
             "deleted_at",
         )
-        return [
+        items = [
             {
-                **{field: getattr(project, field) for field in fields},
+                **{field: getattr(project, field) for field in list_fields},
                 "tags": tags[project.id],
-                "tag_ids": tag_ids[project.id],
                 "cover": covers.get(project.cover_media_id),
-                "screenshots": screenshots[project.id],
-                "screenshot_media_ids": [
-                    item["id"] for item in screenshots[project.id]
-                ],
-                "related_posts": related_posts[project.id],
-                "related_post_ids": [
-                    item["id"] for item in related_posts[project.id]
-                ],
+                "problem_excerpt": self._markdown_excerpt(project.problem_md),
+                "role_excerpt": self._markdown_excerpt(project.role_md),
+                "decision_excerpt": self._markdown_excerpt(
+                    project.architecture_md or project.solutions_md
+                ),
+                "result_excerpt": self._markdown_excerpt(project.outcomes_md),
             }
             for project in projects
         ]
+        if include_detail:
+            for item, project in zip(items, projects, strict=True):
+                item.update(
+                    {
+                        **{field: getattr(project, field) for field in detail_fields},
+                        "tag_ids": tag_ids[project.id],
+                        "screenshots": screenshots[project.id],
+                        "screenshot_media_ids": [
+                            media["id"] for media in screenshots[project.id]
+                        ],
+                        "related_posts": related_posts[project.id],
+                        "related_post_ids": [
+                            post["id"] for post in related_posts[project.id]
+                        ],
+                    }
+                )
+        return items
+
+    @staticmethod
+    def _markdown_excerpt(source: str, limit: int = 180) -> str:
+        text = re.sub(r"```.*?```", " ", source, flags=re.DOTALL)
+        text = re.sub(r"[#>*_`\[\]()]", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text if len(text) <= limit else f"{text[: limit - 1].rstrip()}…"
 
     async def _media_dicts(self, media_ids: set[UUID]) -> dict[UUID, dict]:
         if not media_ids:

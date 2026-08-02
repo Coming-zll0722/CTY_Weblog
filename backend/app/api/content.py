@@ -14,9 +14,10 @@ from app.repositories.content import ContentRepository
 from app.schemas.common import ApiResponse, PageMeta, PageResponse
 from app.schemas.post import PostCreate, PostPublish, PostUpdate
 from app.schemas.project import ProjectCreate, ProjectUpdate
-from app.services.media import store_image
+from app.services.media import ensure_variant, store_image
 from app.services.search import search_content
 from app.services.storage import get_media_storage
+from app.services.content_cache import public_content_cache
 
 router = APIRouter(tags=["content"])
 
@@ -30,11 +31,16 @@ async def list_posts(
     tag: str | None = Query(None, max_length=100),
     session: AsyncSession = Depends(get_session),
 ) -> PageResponse[dict]:
-    items, total = await ContentRepository(session).list_posts(
-        page, page_size, q, category, tag
-    )
-    return PageResponse(
-        data=items, meta=PageMeta(page=page, page_size=page_size, total=total)
+    async def load() -> PageResponse[dict]:
+        items, total = await ContentRepository(session).list_posts(
+            page, page_size, q, category, tag
+        )
+        return PageResponse(
+            data=items, meta=PageMeta(page=page, page_size=page_size, total=total)
+        )
+
+    return await public_content_cache.get_or_create(
+        ("posts", page, page_size, q, category, tag), load
     )
 
 
@@ -42,7 +48,20 @@ async def list_posts(
 async def get_post(
     slug: str, session: AsyncSession = Depends(get_session)
 ) -> ApiResponse[dict]:
-    return ApiResponse(data=await ContentRepository(session).get_post(slug))
+    async def load() -> ApiResponse[dict]:
+        return ApiResponse(data=await ContentRepository(session).get_post(slug))
+
+    return await public_content_cache.get_or_create(("post", slug), load)
+
+
+@router.get("/posts/{slug}/context")
+async def get_post_context(
+    slug: str, session: AsyncSession = Depends(get_session)
+) -> ApiResponse[dict]:
+    async def load() -> ApiResponse[dict]:
+        return ApiResponse(data=await ContentRepository(session).get_post_context(slug))
+
+    return await public_content_cache.get_or_create(("post-context", slug), load)
 
 
 @router.get("/projects")
@@ -52,9 +71,14 @@ async def list_projects(
     q: str | None = Query(None, max_length=100),
     session: AsyncSession = Depends(get_session),
 ) -> PageResponse[dict]:
-    items, total = await ContentRepository(session).list_projects(page, page_size, q)
-    return PageResponse(
-        data=items, meta=PageMeta(page=page, page_size=page_size, total=total)
+    async def load() -> PageResponse[dict]:
+        items, total = await ContentRepository(session).list_projects(page, page_size, q)
+        return PageResponse(
+            data=items, meta=PageMeta(page=page, page_size=page_size, total=total)
+        )
+
+    return await public_content_cache.get_or_create(
+        ("projects", page, page_size, q), load
     )
 
 
@@ -62,39 +86,47 @@ async def list_projects(
 async def get_project(
     slug: str, session: AsyncSession = Depends(get_session)
 ) -> ApiResponse[dict]:
-    return ApiResponse(data=await ContentRepository(session).get_project(slug))
+    async def load() -> ApiResponse[dict]:
+        return ApiResponse(data=await ContentRepository(session).get_project(slug))
+
+    return await public_content_cache.get_or_create(("project", slug), load)
 
 
 @router.get("/timelines")
 async def list_timeline(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[list[dict]]:
-    events = list(
-        (
-            await session.scalars(
-                select(Timeline)
-                .where(Timeline.is_public.is_(True), Timeline.deleted_at.is_(None))
-                .order_by(Timeline.event_date.desc(), Timeline.sort_order.asc())
-            )
-        ).all()
-    )
-    return ApiResponse(
-        data=[
-            {
-                "id": event.id,
-                "event_date": event.event_date,
-                "title": event.title,
-                "description": event.description,
-                "event_type": event.event_type,
-            }
-            for event in events
-        ]
-    )
+    async def load() -> ApiResponse[list[dict]]:
+        events = list(
+            (
+                await session.scalars(
+                    select(Timeline)
+                    .where(Timeline.is_public.is_(True), Timeline.deleted_at.is_(None))
+                    .order_by(Timeline.event_date.desc(), Timeline.sort_order.asc())
+                )
+            ).all()
+        )
+        return ApiResponse(
+            data=[
+                {
+                    "id": event.id,
+                    "event_date": event.event_date,
+                    "title": event.title,
+                    "description": event.description,
+                    "event_type": event.event_type,
+                }
+                for event in events
+            ]
+        )
+
+    return await public_content_cache.get_or_create(("timeline",), load)
 
 
 @router.get("/media/{storage_key}")
 async def media_file(
     storage_key: str,
+    width: int | None = Query(None),
+    image_format: str | None = Query(None, alias="format", pattern=r"^(webp|avif)$"),
     session: AsyncSession = Depends(get_session),
 ) -> FileResponse:
     media = await session.scalar(
@@ -108,12 +140,22 @@ async def media_file(
     source = get_media_storage().resolve(storage_key)
     if source is None:
         raise AppError(404, "MEDIA_NOT_FOUND", "图片不存在。")
+    selected_source = source
+    selected_type = media.mime_type
+    if width in {480, 960, 1440} and image_format:
+        variant = await ensure_variant(storage_key, source, width, image_format)
+        if variant:
+            selected_source = variant
+            selected_type = f"image/{image_format}"
     return FileResponse(
-        source,
-        media_type=media.mime_type,
-        filename=media.original_name,
+        selected_source,
+        media_type=selected_type,
+        filename=None,
         content_disposition_type="inline",
-        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Vary": "Accept",
+        },
     )
 
 
@@ -125,8 +167,13 @@ async def search(
     category: str | None = Query(None, max_length=100),
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[dict]:
-    return ApiResponse(
-        data=await search_content(session, q, page, page_size, category)
+    async def load() -> ApiResponse[dict]:
+        return ApiResponse(
+            data=await search_content(session, q, page, page_size, category)
+        )
+
+    return await public_content_cache.get_or_create(
+        ("search", q.casefold(), page, page_size, category), load, ttl_seconds=60
     )
 
 

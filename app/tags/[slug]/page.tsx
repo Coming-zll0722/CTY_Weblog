@@ -46,7 +46,7 @@ export default async function TagPage({
             <div><h2>{article.title}</h2><p>{article.summary}</p></div>
           </Link>
         ))}
-        {!articles.length ? <p className="search-empty">该标签暂时没有已发布文章。</p> : null}
+        {!articles.length ? <div className="empty-state"><h2>该标签暂时没有已发布文章</h2><p>可以返回全部文章，或按主题分类继续浏览。</p><div className="hero-actions"><Link href="/articles">全部文章</Link><Link href="/categories">主题分类</Link></div></div> : null}
       </div>
     </div>
   );

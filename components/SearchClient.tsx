@@ -12,14 +12,24 @@ type SearchResult = {
   slug: string;
 };
 
-export function SearchClient({ categories = [] }: { categories?: TaxonomyItem[] }) {
-  const [query, setQuery] = useState("");
+export function SearchClient({
+  categories = [],
+  initialQuery = "",
+  initialCategory = "",
+  initialPage = 1,
+}: {
+  categories?: TaxonomyItem[];
+  initialQuery?: string;
+  initialCategory?: string;
+  initialPage?: number;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [category, setCategory] = useState("");
-  const [page, setPage] = useState(1);
+  const [category, setCategory] = useState(initialCategory);
+  const [page, setPage] = useState(initialPage);
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
@@ -56,6 +66,27 @@ export function SearchClient({ categories = [] }: { categories?: TaxonomyItem[] 
     };
   }, [category, page, query]);
 
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (category) params.set("category", category);
+    if (page > 1) params.set("page", String(page));
+    const nextUrl = params.size ? `/search?${params}` : "/search";
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [category, page, query]);
+
+  useEffect(() => {
+    const restore = () => {
+      const params = new URLSearchParams(window.location.search);
+      setQuery(params.get("q") ?? "");
+      setCategory(params.get("category") ?? "");
+      const restoredPage = Number(params.get("page") ?? "1");
+      setPage(Number.isInteger(restoredPage) && restoredPage > 0 ? restoredPage : 1);
+    };
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, []);
+
   return (
     <div className="section-shell page-shell search-page">
       <header className="page-heading">
@@ -63,14 +94,15 @@ export function SearchClient({ categories = [] }: { categories?: TaxonomyItem[] 
         <h1>找到一条工程线索。</h1>
       </header>
       <label className="search-box">
-        <span>⌕</span>
+        <span aria-hidden="true">⌕</span>
         <input
           value={query}
           onChange={(event) => { setQuery(event.target.value); setPage(1); }}
           placeholder="搜索文章、项目、技术或标签…"
+          aria-label="搜索文章和项目"
           autoFocus
         />
-        {query && <button onClick={() => setQuery("")}>清除</button>}
+        {query && <button type="button" onClick={() => setQuery("")}>清除</button>}
       </label>
       {categories.length ? (
         <label className="search-filter">
@@ -86,14 +118,14 @@ export function SearchClient({ categories = [] }: { categories?: TaxonomyItem[] 
           <p>可以试试</p>
           <div className="tag-row">
             {["TCP", "自动化测试", "Python", "FPGA", "架构"].map((item) => (
-              <button onClick={() => setQuery(item)} key={item}>{item}</button>
+              <button type="button" onClick={() => setQuery(item)} key={item}>{item}</button>
             ))}
           </div>
         </div>
       ) : loading ? (
-        <div className="search-empty"><p>正在搜索…</p></div>
+        <div className="search-empty" role="status" aria-live="polite"><p>正在搜索…</p></div>
       ) : failed ? (
-        <div className="search-empty">
+        <div className="search-empty" role="alert">
           <h2>搜索服务暂时不可用</h2>
           <p>请稍后重试，或从文章与项目页面继续浏览。</p>
         </div>
@@ -127,7 +159,7 @@ export function SearchClient({ categories = [] }: { categories?: TaxonomyItem[] 
           <p>检查关键词，或尝试更宽泛的技术名称、分类和标签。</p>
           <div className="tag-row">
             {suggestions.map((item) => (
-              <button onClick={() => setQuery(item)} key={item}>{item}</button>
+              <button type="button" onClick={() => setQuery(item)} key={item}>{item}</button>
             ))}
           </div>
         </div>

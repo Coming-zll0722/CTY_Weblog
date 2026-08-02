@@ -6,6 +6,7 @@ from app.api import auth, content, management
 from app.db.session import get_session
 from app.repositories.management import ManagementRepository
 from app.schemas.common import ApiResponse
+from app.services.content_cache import public_content_cache
 
 router = APIRouter()
 router.include_router(auth.router)
@@ -27,5 +28,8 @@ async def health(
 async def public_settings(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[dict]:
-    values = await ManagementRepository(session).public_settings()
-    return ApiResponse(data=values)
+    async def load() -> ApiResponse[dict]:
+        values = await ManagementRepository(session).public_settings()
+        return ApiResponse(data=values)
+
+    return await public_content_cache.get_or_create(("public-settings",), load)

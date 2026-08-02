@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PublicLink, PublicSettings } from "@/lib/api";
 
 const navigation = [
@@ -26,6 +26,8 @@ export function SiteFrame({
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -34,17 +36,42 @@ export function SiteFrame({
         ? "dark"
         : "light";
     document.documentElement.dataset.theme = next;
+    document.documentElement.style.colorScheme = next;
     const timer = window.setTimeout(() => setTheme(next), 0);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    navRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+      if (event.key === "Tab") {
+        const focusable = [
+          ...(navRef.current?.querySelectorAll<HTMLAnchorElement>("a") ?? []),
+          menuButtonRef.current,
+        ].filter(Boolean) as HTMLElement[];
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
     };
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", close);
+    };
   }, [menuOpen]);
 
   function toggleTheme() {
@@ -52,6 +79,7 @@ export function SiteFrame({
     setTheme(next);
     localStorage.setItem("theme", next);
     document.documentElement.dataset.theme = next;
+    document.documentElement.style.colorScheme = next;
   }
 
   return (
@@ -62,13 +90,19 @@ export function SiteFrame({
             <span className="brand-mark">{settings.brandMark}</span>
             <span>{settings.siteName}</span>
           </Link>
-          <nav className={menuOpen ? "main-nav open" : "main-nav"} aria-label="主导航">
+          <nav
+            ref={navRef}
+            id="primary-navigation"
+            className={menuOpen ? "main-nav open" : "main-nav"}
+            aria-label="主导航"
+          >
             {navigation.map(([label, href]) => (
               <Link
                 className={pathname.startsWith(href) ? "active" : ""}
                 href={href}
                 key={href}
                 onClick={() => setMenuOpen(false)}
+                aria-current={pathname.startsWith(href) ? "page" : undefined}
               >
                 {label}
               </Link>
@@ -80,10 +114,12 @@ export function SiteFrame({
               {theme === "light" ? "◐" : "☼"}
             </button>
             <button
+              ref={menuButtonRef}
               className="menu-button"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "关闭导航菜单" : "打开导航菜单"}
               aria-expanded={menuOpen}
+              aria-controls="primary-navigation"
             >
               <i /><i />
             </button>

@@ -22,6 +22,17 @@ type ManagerProps = {
   onError: (message: string) => void;
 };
 
+function useUnsavedWarning(dirty: boolean) {
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+}
+
 export function PostManager({ csrf, onError }: ManagerProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [editing, setEditing] = useState<Post | null>(null);
@@ -32,6 +43,9 @@ export function PostManager({ csrf, onError }: ManagerProps) {
   const [categories, setCategories] = useState<Taxonomy[]>([]);
   const [tags, setTags] = useState<Taxonomy[]>([]);
   const [media, setMedia] = useState<AdminMedia[]>([]);
+  const dirty = JSON.stringify(draft) !== lastSaved
+    && Boolean(editing || draft.title || draft.content_md);
+  useUnsavedWarning(dirty);
 
   const load = useCallback(async () => {
     try {
@@ -248,6 +262,9 @@ export function PostManager({ csrf, onError }: ManagerProps) {
         ))}
       </div>
       <div className="admin-editor">
+        <p className="admin-save-state" role="status" aria-live="polite">
+          {saving ? "正在保存…" : dirty ? "有尚未保存的修改" : editing ? "全部修改已保存" : "新建草稿"}
+        </p>
         <label>标题<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
         <label>Slug<input value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value })} /></label>
         <label>摘要<textarea rows={3} value={draft.summary} onChange={(event) => setDraft({ ...draft, summary: event.target.value })} /></label>
@@ -287,6 +304,9 @@ export function ProjectManager({ csrf, onError }: ManagerProps) {
   const [tags, setTags] = useState<Taxonomy[]>([]);
   const [media, setMedia] = useState<AdminMedia[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [lastSaved, setLastSaved] = useState(JSON.stringify(emptyProject));
+  const dirty = JSON.stringify(draft) !== lastSaved;
+  useUnsavedWarning(dirty);
 
   const load = useCallback(async () => {
     try {
@@ -324,7 +344,7 @@ export function ProjectManager({ csrf, onError }: ManagerProps) {
 
   const edit = (project: Project) => {
     setEditing(project);
-    setDraft({
+    const values = {
       title: project.title,
       slug: project.slug,
       summary: project.summary,
@@ -352,7 +372,9 @@ export function ProjectManager({ csrf, onError }: ManagerProps) {
       screenshot_media_ids: project.screenshot_media_ids.join(", "),
       related_post_ids: project.related_post_ids.join(", "),
       tag_ids: project.tag_ids.join(", "),
-    });
+    };
+    setDraft(values);
+    setLastSaved(JSON.stringify(values));
   };
 
   const save = async () => {
@@ -427,6 +449,7 @@ export function ProjectManager({ csrf, onError }: ManagerProps) {
           <button onClick={() => {
             setEditing(null);
             setDraft(emptyProject);
+            setLastSaved(JSON.stringify(emptyProject));
           }}>
             新建
           </button>
@@ -448,6 +471,9 @@ export function ProjectManager({ csrf, onError }: ManagerProps) {
         ))}
       </div>
       <div className="admin-editor">
+        <p className="admin-save-state" role="status" aria-live="polite">
+          {dirty ? "有尚未保存的修改" : editing ? "全部修改已保存" : "新建项目"}
+        </p>
         <h3>{editing ? "编辑项目" : "新建项目"}</h3>
         <label>名称<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
         <label>Slug<input value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value })} /></label>

@@ -73,9 +73,23 @@ type BackupRecord = {
   created_at: string;
 };
 
-function fetchOperations() {
+type AnalyticsOverview = {
+  views: number;
+  visitor_days: number;
+  date_from: string;
+  date_to: string;
+  daily: { date: string; views: number; visitor_days: number }[];
+  popular_pages: { path: string; views: number }[];
+  retention_note: string;
+};
+
+function fetchOperations(dateFrom = "", dateTo = "") {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set("date_from", dateFrom);
+  if (dateTo) params.set("date_to", dateTo);
+  const analyticsPath = `/admin/analytics/overview${params.size ? `?${params}` : ""}`;
   return Promise.all([
-    adminRequest<{ views: number; visitors: number }>("/admin/analytics/overview"),
+    adminRequest<Partial<AnalyticsOverview> & { visitors?: number }>(analyticsPath),
     adminRequest<AuditLog[]>("/admin/operation-logs"),
     adminRequest<BackupRecord[]>("/admin/backups"),
     adminRequest<Record<string, unknown>>("/admin/settings"),
@@ -83,7 +97,17 @@ function fetchOperations() {
 }
 
 export function OperationsManager({ csrf, onError }: ManagerProps) {
-  const [analytics, setAnalytics] = useState({ views: 0, visitors: 0 });
+  const [analytics, setAnalytics] = useState<AnalyticsOverview>({
+    views: 0,
+    visitor_days: 0,
+    date_from: "",
+    date_to: "",
+    daily: [],
+    popular_pages: [],
+    retention_note: "",
+  });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [settings, setSettings] = useState("{}");
@@ -115,7 +139,15 @@ export function OperationsManager({ csrf, onError }: ManagerProps) {
     [analyticsData, logItems, backupItems, settingValues]:
     Awaited<ReturnType<typeof fetchOperations>>,
   ) => {
-    setAnalytics(analyticsData);
+    setAnalytics({
+      views: analyticsData.views ?? 0,
+      visitor_days: analyticsData.visitor_days ?? analyticsData.visitors ?? 0,
+      date_from: analyticsData.date_from ?? "",
+      date_to: analyticsData.date_to ?? "",
+      daily: analyticsData.daily ?? [],
+      popular_pages: analyticsData.popular_pages ?? [],
+      retention_note: analyticsData.retention_note ?? "",
+    });
     setLogs(logItems);
     setBackups(backupItems);
     setSettings(JSON.stringify(settingValues, null, 2));
@@ -123,11 +155,11 @@ export function OperationsManager({ csrf, onError }: ManagerProps) {
 
   const load = useCallback(async () => {
     try {
-      applyOperations(await fetchOperations());
+      applyOperations(await fetchOperations(dateFrom, dateTo));
     } catch (caught) {
       onError((caught as Error).message);
     }
-  }, [applyOperations, onError]);
+  }, [applyOperations, dateFrom, dateTo, onError]);
 
   useEffect(() => {
     let active = true;
@@ -205,10 +237,18 @@ export function OperationsManager({ csrf, onError }: ManagerProps) {
   return (
     <div className="operations-stack">
       <div className="admin-stats">
-        <div><span>访问量</span><strong>{analytics.views}</strong></div>
-        <div><span>匿名访客</span><strong>{analytics.visitors}</strong></div>
+        <div><span>页面访问次数</span><strong>{analytics.views}</strong></div>
+        <div><span>匿名访客日</span><strong>{analytics.visitor_days}</strong></div>
         <div><span>操作记录</span><strong>{logs.length}</strong></div>
       </div>
+      <section className="admin-editor analytics-panel">
+        <div className="admin-list-head"><div><h3>访问趋势</h3><p>{analytics.date_from} — {analytics.date_to}</p></div><div className="analytics-range"><label>开始<input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} /></label><label>结束<input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} /></label><button onClick={load}>应用范围</button></div></div>
+        <p>{analytics.retention_note}</p>
+        <div className="analytics-columns">
+          <div><h4>每日趋势</h4>{analytics.daily.length ? analytics.daily.map((item) => <div className="analytics-row" key={item.date}><span>{item.date}</span><b>{item.views} 次</b><small>{item.visitor_days} 访客日</small></div>) : <p>所选范围暂无访问记录。</p>}</div>
+          <div><h4>热门页面</h4>{analytics.popular_pages.length ? analytics.popular_pages.map((item) => <div className="analytics-row" key={item.path}><span>{item.path}</span><b>{item.views} 次</b></div>) : <p>所选范围暂无页面排行。</p>}</div>
+        </div>
+      </section>
       <section className="admin-editor">
         <h3>网站与 SEO 设置</h3>
         <p>这里的公开信息会直接用于网站页眉、页脚、联系入口和搜索引擎元数据。</p>

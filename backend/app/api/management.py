@@ -1,10 +1,10 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from hashlib import sha256
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,6 +29,7 @@ from app.schemas.management import (
     TimelineUpdate,
 )
 from app.services.backups import create_database_backup, restore_database_backup
+from app.services.content_cache import public_content_cache
 
 public_router = APIRouter(tags=["taxonomy"])
 admin_router = APIRouter(
@@ -51,43 +52,57 @@ def safe_public_url(value: str) -> bool:
 async def categories(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[list[dict]]:
-    records = await ManagementRepository(session).list_records(Category)
-    return ApiResponse(
-        data=[record_dict(item, ("id", "name", "slug", "description")) for item in records]
-    )
+    async def load() -> ApiResponse[list[dict]]:
+        records = await ManagementRepository(session).list_records(Category)
+        return ApiResponse(
+            data=[
+                record_dict(item, ("id", "name", "slug", "description"))
+                for item in records
+            ]
+        )
+
+    return await public_content_cache.get_or_create(("categories",), load)
 
 
 @public_router.get("/tags")
 async def tags(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[list[dict]]:
-    records = await ManagementRepository(session).list_records(Tag)
-    return ApiResponse(data=[record_dict(item, ("id", "name", "slug")) for item in records])
+    async def load() -> ApiResponse[list[dict]]:
+        records = await ManagementRepository(session).list_records(Tag)
+        return ApiResponse(
+            data=[record_dict(item, ("id", "name", "slug")) for item in records]
+        )
+
+    return await public_content_cache.get_or_create(("tags",), load)
 
 
 @public_router.get("/links")
 async def public_links(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[list[dict]]:
-    records = list(
-        (
-            await session.scalars(
-                select(Link)
-                .where(
-                    Link.status == "active",
-                    Link.deleted_at.is_(None),
+    async def load() -> ApiResponse[list[dict]]:
+        records = list(
+            (
+                await session.scalars(
+                    select(Link)
+                    .where(
+                        Link.status == "active",
+                        Link.deleted_at.is_(None),
+                    )
+                    .order_by(Link.sort_order.asc(), Link.created_at.asc())
                 )
-                .order_by(Link.sort_order.asc(), Link.created_at.asc())
-            )
-        ).all()
-    )
-    return ApiResponse(
-        data=[
-            record_dict(item, ("id", "name", "url", "description"))
-            for item in records
-            if safe_public_url(item.url)
-        ]
-    )
+            ).all()
+        )
+        return ApiResponse(
+            data=[
+                record_dict(item, ("id", "name", "url", "description"))
+                for item in records
+                if safe_public_url(item.url)
+            ]
+        )
+
+    return await public_content_cache.get_or_create(("links",), load)
 
 
 @public_router.post("/analytics/views", status_code=status.HTTP_202_ACCEPTED)
@@ -333,10 +348,14 @@ async def operation_logs(
 
 @admin_router.get("/analytics/overview")
 async def analytics(
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
     _user: User = Depends(admin_user),
     session: AsyncSession = Depends(get_session),
-) -> ApiResponse[dict[str, int]]:
-    return ApiResponse(data=await ManagementRepository(session).analytics_overview())
+) -> ApiResponse[dict]:
+    return ApiResponse(
+        data=await ManagementRepository(session).analytics_overview(date_from, date_to)
+    )
 
 
 @admin_router.get("/backups")

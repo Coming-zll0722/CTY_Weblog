@@ -14,6 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.api.routes import router
 from app.core.config import get_settings
 from app.core.errors import AppError
+from app.services.content_cache import public_content_cache
 
 settings = get_settings()
 logging.basicConfig(level=settings.log_level, format="%(message)s")
@@ -55,7 +56,28 @@ async def request_context(
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    if request.url.path.startswith(("/api/v1/admin", "/api/v1/auth")):
+    path = request.url.path
+    if (
+        request.method in {"POST", "PATCH", "PUT", "DELETE"}
+        and path.startswith("/api/v1/admin")
+        and response.status_code < 400
+    ):
+        public_content_cache.invalidate()
+    public_get_prefixes = (
+        "/api/v1/posts",
+        "/api/v1/projects",
+        "/api/v1/timelines",
+        "/api/v1/search",
+        "/api/v1/categories",
+        "/api/v1/tags",
+        "/api/v1/links",
+        "/api/v1/settings/public",
+    )
+    if request.method == "GET" and path.startswith(public_get_prefixes):
+        response.headers["Cache-Control"] = (
+            "public, max-age=60, stale-while-revalidate=240"
+        )
+    elif not path.startswith("/api/v1/media/"):
         response.headers["Cache-Control"] = "no-store"
     logger.info(
         json.dumps({
