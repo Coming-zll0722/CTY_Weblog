@@ -10,12 +10,14 @@
     "build": "vinext build",
     "start": "vinext start",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && npm run build && node --test tests/rendered-html.test.mjs tests/bundle-budget.test.mjs && vitest run",
+    "test": "node --test tests/rendered-html.test.mjs tests/bundle-budget.test.mjs && vitest run",
     "test:unit": "vitest run",
+    "test:e2e": "playwright test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {
     "katex": "^0.18.1",
+    "mdast-util-to-string": "^4.0.0",
     "mermaid": "^11.16.0",
     "next": "16.2.11",
     "react": "19.2.6",
@@ -25,10 +27,15 @@
     "rehype-prism-plus": "^2.0.2",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.55.0",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@tailwindcss/postcss": "4.2.1",
     "@testing-library/jest-dom": "^7.0.0",

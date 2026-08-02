@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -108,6 +109,31 @@ def stop_process(process: subprocess.Popen[bytes]) -> None:
         process.wait(timeout=5)
 
 
+def patch_windows_standalone_asset_lookup() -> None:
+    """Work around vinext 0.0.50 using backslashes as static-cache keys on Windows."""
+    if os.name != "nt":
+        return
+    cache_path = (
+        PROJECT_ROOT
+        / "dist"
+        / "standalone"
+        / "node_modules"
+        / "vinext"
+        / "dist"
+        / "server"
+        / "static-file-cache.js"
+    )
+    source = cache_path.read_text(encoding="utf8")
+    needle = "return this.entries.get(pathname);"
+    replacement = (
+        'return this.entries.get(pathname) '
+        '?? this.entries.get("/" + pathname.slice(1).replaceAll("/", "\\\\"));'
+    )
+    if needle not in source:
+        raise RuntimeError("vinext static asset lookup changed; update the Windows shim")
+    cache_path.write_text(source.replace(needle, replacement, 1), encoding="utf8")
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(
         prefix="engineering-notes-integration-",
@@ -153,6 +179,7 @@ def main() -> None:
                 env=environment,
                 check=True,
             )
+            patch_windows_standalone_asset_lookup()
             subprocess.run(
                 ["node", "tests/real-api-smoke.mjs"],
                 cwd=PROJECT_ROOT,
@@ -160,17 +187,9 @@ def main() -> None:
                 check=True,
             )
             frontend = subprocess.Popen(
-                [
-                    "node",
-                    "node_modules/vinext/dist/cli.js",
-                    "start",
-                    "--hostname",
-                    "127.0.0.1",
-                    "--port",
-                    "8766",
-                ],
+                ["node", "dist/standalone/server.js"],
                 cwd=PROJECT_ROOT,
-                env=environment,
+                env=environment | {"HOST": "127.0.0.1", "PORT": "8766"},
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 creationflags=hidden,
@@ -200,6 +219,27 @@ def main() -> None:
                         or "localhost" in body
                     ):
                         raise RuntimeError(f"SEO endpoint used the wrong origin: {route}")
+                    if route == "/":
+                        stylesheets = re.findall(r'href="([^"]+\.css)"', body)
+                        if not stylesheets:
+                            raise RuntimeError("Vinext HTML did not include a stylesheet")
+                        for stylesheet in stylesheets:
+                            with urlopen(
+                                f"http://127.0.0.1:8766{stylesheet}", timeout=5
+                            ) as asset_response:
+                                if asset_response.status != 200:
+                                    raise RuntimeError(
+                                        f"Vinext stylesheet failed: {stylesheet}"
+                                    )
+            browser_environment = environment | {
+                "PLAYWRIGHT_BASE_URL": "http://127.0.0.1:8766"
+            }
+            subprocess.run(
+                [npm, "run", "test:e2e"],
+                cwd=PROJECT_ROOT,
+                env=browser_environment,
+                check=True,
+            )
         finally:
             if frontend is not None:
                 stop_process(frontend)

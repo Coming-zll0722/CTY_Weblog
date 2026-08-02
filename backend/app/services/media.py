@@ -1,3 +1,4 @@
+import asyncio
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
@@ -51,29 +52,10 @@ async def store_image(
     detected_mime = _detected_mime(body)
     if detected_mime != declared_mime:
         raise AppError(415, "UPLOAD_TYPE_DENIED", "文件内容与声明类型不一致。")
-    width: int | None = None
-    height: int | None = None
     try:
-        with Image.open(BytesIO(body)) as image:
-            image.verify()
-        with Image.open(BytesIO(body)) as image:
-            image.load()
-            width, height = image.size
-            if width * height > 40_000_000:
-                raise AppError(413, "IMAGE_DIMENSIONS_TOO_LARGE", "图片像素尺寸过大。")
-            output = BytesIO()
-            if declared_mime == "image/jpeg":
-                normalized = image.convert("RGB")
-                normalized.save(output, format="JPEG", quality=90, optimize=True)
-            elif declared_mime == "image/png":
-                image.save(output, format="PNG", optimize=True)
-            elif declared_mime == "image/webp":
-                image.save(output, format="WEBP", quality=88, method=6)
-            else:
-                image.save(output, format="AVIF", quality=85)
-            body = output.getvalue()
-            if len(body) > settings.max_upload_bytes:
-                raise AppError(413, "UPLOAD_TOO_LARGE", "处理后的图片超过大小限制。")
+        body, width, height = await asyncio.to_thread(
+            _normalize_image, body, declared_mime, settings.max_upload_bytes
+        )
     except (Image.DecompressionBombError, UnidentifiedImageError, OSError) as exc:
         raise AppError(415, "UPLOAD_TYPE_DENIED", "图片无法解析。") from exc
     digest = sha256(body).hexdigest()
@@ -86,7 +68,9 @@ async def store_image(
     if existing:
         return existing
     try:
-        storage_name = get_media_storage().store(body, extension)
+        storage = get_media_storage()
+        storage_name = await asyncio.to_thread(storage.store, body, extension)
+        await asyncio.to_thread(_write_variants, storage, storage_name, body, width)
     except ValueError:
         raise AppError(400, "INVALID_UPLOAD_PATH", "上传路径无效。")
 
@@ -105,3 +89,79 @@ async def store_image(
     await session.commit()
     await session.refresh(media)
     return media
+
+
+def _normalize_image(body: bytes, mime_type: str, max_bytes: int) -> tuple[bytes, int, int]:
+    with Image.open(BytesIO(body)) as image:
+        image.verify()
+    with Image.open(BytesIO(body)) as image:
+        image.load()
+        width, height = image.size
+        if width * height > 40_000_000:
+            raise AppError(413, "IMAGE_DIMENSIONS_TOO_LARGE", "图片像素尺寸过大。")
+        output = BytesIO()
+        if mime_type == "image/jpeg":
+            image.convert("RGB").save(output, format="JPEG", quality=88, optimize=True)
+        elif mime_type == "image/png":
+            image.save(output, format="PNG", optimize=True)
+        elif mime_type == "image/webp":
+            image.save(output, format="WEBP", quality=86, method=6)
+        else:
+            image.save(output, format="AVIF", quality=82)
+        normalized = output.getvalue()
+        if len(normalized) > max_bytes:
+            raise AppError(413, "UPLOAD_TOO_LARGE", "处理后的图片超过大小限制。")
+        return normalized, width, height
+
+
+def _write_variants(storage, storage_key: str, body: bytes, source_width: int) -> None:
+    for target_width in (480, 960, 1440):
+        if target_width >= source_width:
+            continue
+        for extension, image_format in ((".webp", "WEBP"), (".avif", "AVIF")):
+            try:
+                variant = _resize_image(body, target_width, image_format)
+                storage.store_variant(storage_key, variant, target_width, extension)
+            except OSError:
+                # Some Pillow builds do not include AVIF; WebP remains available.
+                continue
+
+
+def _resize_image(body: bytes, width: int, image_format: str) -> bytes:
+    with Image.open(BytesIO(body)) as image:
+        image.load()
+        if image.width <= width:
+            return body
+        height = max(1, round(image.height * width / image.width))
+        resized = image.convert("RGB").resize((width, height), Image.Resampling.LANCZOS)
+        output = BytesIO()
+        options = (
+            {"quality": 82, "method": 6}
+            if image_format == "WEBP"
+            else {"quality": 78}
+        )
+        resized.save(output, format=image_format, **options)
+        return output.getvalue()
+
+
+async def ensure_variant(
+    storage_key: str,
+    source: Path,
+    width: int,
+    image_format: str,
+) -> Path | None:
+    storage = get_media_storage()
+    extension = f".{image_format}"
+    existing = storage.resolve_variant(storage_key, width, extension)
+    if existing:
+        return existing
+
+    def create() -> Path | None:
+        try:
+            variant = _resize_image(source.read_bytes(), width, image_format.upper())
+            variant_key = storage.store_variant(storage_key, variant, width, extension)
+            return storage.resolve(variant_key)
+        except (OSError, ValueError):
+            return None
+
+    return await asyncio.to_thread(create)

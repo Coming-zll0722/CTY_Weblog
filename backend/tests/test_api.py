@@ -28,6 +28,17 @@ async def test_public_posts_hide_drafts(client: AsyncClient) -> None:
     body = response.json()
     assert body["meta"]["total"] == 1
     assert [post["slug"] for post in body["data"]] == ["published-post"]
+    assert "content_md" not in body["data"][0]
+    assert response.headers["cache-control"].startswith("public")
+    detail = await client.get("/api/v1/posts/published-post")
+    assert "content_md" in detail.json()["data"]
+    context = await client.get("/api/v1/posts/published-post/context")
+    assert context.status_code == 200
+    assert context.json()["data"] == {
+        "previous": None,
+        "next": None,
+        "related": [],
+    }
 
 
 async def test_missing_post_uses_unified_error(client: AsyncClient) -> None:
@@ -552,7 +563,14 @@ async def test_privacy_preserving_analytics(authenticated_client) -> None:
     assert accepted.status_code == 202
     overview = await client.get("/api/v1/admin/analytics/overview")
     assert overview.status_code == 200
-    assert overview.json()["data"] == {"views": 1, "visitors": 1}
+    analytics = overview.json()["data"]
+    assert analytics["views"] == 1
+    assert analytics["visitor_days"] == 1
+    assert analytics["daily"][0]["views"] == 1
+    assert analytics["popular_pages"] == [
+        {"path": "/articles/published-post", "views": 1}
+    ]
+    assert "visitors" not in analytics
     rejected = await client.post(
         "/api/v1/analytics/views",
         json={"path": "/search?q=raw-personal-data"},

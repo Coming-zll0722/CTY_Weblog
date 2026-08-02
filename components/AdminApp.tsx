@@ -92,6 +92,7 @@ export function AdminApp() {
           <button
             className={tab === value ? "active" : ""}
             onClick={() => setTab(value)}
+            aria-current={tab === value ? "page" : undefined}
             key={value}
           >
             {label}
@@ -156,13 +157,14 @@ function AdminLogin({
   };
 
   return (
-    <form className="admin-login" onSubmit={submit}>
+    <form className="admin-login" onSubmit={submit} aria-busy={submitting}>
       <p className="eyebrow">SECURE SIGN IN</p>
       <h2>登录内容工作台</h2>
       <label>
         管理员邮箱
         <input
           type="email"
+          autoComplete="username"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required

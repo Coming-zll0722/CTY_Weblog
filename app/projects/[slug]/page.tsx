@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { ApiError, getProject, getPublicSettingsOrDefaults } from "@/lib/api";
+import { absoluteSiteUrl } from "@/lib/site-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,12 @@ export async function generateMetadata({
         type: "website",
         title: project.title,
         description: project.summary,
+        images: project.cover ? [{
+          url: `/api/v1/media/${project.cover.storage_key}`,
+          width: project.cover.width ?? undefined,
+          height: project.cover.height ?? undefined,
+          alt: project.cover.alt_text ?? project.title,
+        }] : undefined,
       },
     };
   } catch {
@@ -31,17 +38,19 @@ export async function generateMetadata({
 }
 
 function ProjectSection({
+  id,
   eyebrow,
   title,
   source,
 }: {
+  id: string;
   eyebrow: string;
   title: string;
   source: string;
 }) {
   if (!source) return null;
   return (
-    <section className="case-section">
+    <section className="case-section" id={id}>
       <p className="eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
       <div className="prose"><MarkdownContent source={source} /></div>
@@ -74,6 +83,10 @@ export default async function ProjectDetail({
     description: project.summary,
     codeRepository: project.repo_url,
     url: project.demo_url,
+    programmingLanguage: project.tags,
+    image: project.cover
+      ? absoluteSiteUrl(`/api/v1/media/${project.cover.storage_key}`)
+      : undefined,
     author: { "@type": "Person", name: settings.authorName },
   }).replace(/</g, "\\u003c");
 
@@ -92,6 +105,9 @@ export default async function ProjectDetail({
           <ZoomableImage
             src={`/api/v1/media/${project.cover.storage_key}`}
             alt={project.cover.alt_text ?? project.title}
+            width={project.cover.width}
+            height={project.cover.height}
+            sizes="(max-width: 900px) 100vw, 1120px"
           />
         ) : null}
       </header>
@@ -100,15 +116,19 @@ export default async function ProjectDetail({
         <div><span>起止时间</span><strong>{period || "持续维护"}</strong></div>
         <div><span>保密说明</span><strong>{project.confidentiality_note || "使用脱敏与模拟资料"}</strong></div>
       </div>
-      <ProjectSection eyebrow="BACKGROUND" title="项目背景" source={project.background_md} />
-      <ProjectSection eyebrow="PROBLEM" title="解决的问题" source={project.problem_md} />
-      <ProjectSection eyebrow="MY ROLE" title="我的职责" source={project.role_md} />
-      <ProjectSection eyebrow="SYSTEM DESIGN" title="系统架构" source={project.architecture_md} />
-      <ProjectSection eyebrow="FEATURES" title="核心功能" source={project.features_md} />
-      <ProjectSection eyebrow="CHALLENGES" title="技术难点" source={project.challenges_md} />
-      <ProjectSection eyebrow="SOLUTIONS" title="解决方案" source={project.solutions_md} />
-      <ProjectSection eyebrow="OUTCOMES" title="项目成果" source={project.outcomes_md} />
-      <ProjectSection eyebrow="NEXT" title="后续计划" source={project.next_steps_md} />
+      <nav className="case-nav" aria-label="案例章节">
+        <a href="#background">背景</a><a href="#problem">问题与限制</a><a href="#role">职责</a><a href="#architecture">架构</a><a href="#challenges">难点</a><a href="#solution">方案与取舍</a><a href="#validation">验证与结果</a><a href="#next">复盘</a>
+      </nav>
+      <div className="case-study-body">
+        <ProjectSection id="background" eyebrow="01 / BACKGROUND" title="项目背景" source={project.background_md} />
+        <ProjectSection id="problem" eyebrow="02 / PROBLEM & CONSTRAINTS" title="问题与限制" source={project.problem_md} />
+        <ProjectSection id="role" eyebrow="03 / MY ROLE" title="我的职责" source={project.role_md} />
+        <ProjectSection id="architecture" eyebrow="04 / ARCHITECTURE" title="架构与关键决策" source={project.architecture_md} />
+        <ProjectSection id="challenges" eyebrow="05 / CHALLENGES" title="技术难点" source={project.challenges_md} />
+        <ProjectSection id="solution" eyebrow="06 / TRADE-OFFS" title="方案、功能与取舍" source={[project.solutions_md, project.features_md].filter(Boolean).join("\n\n")} />
+        <ProjectSection id="validation" eyebrow="07 / VALIDATION & OUTCOME" title="验证方法与结果" source={project.outcomes_md} />
+        <ProjectSection id="next" eyebrow="08 / RETROSPECTIVE" title="复盘与后续计划" source={project.next_steps_md} />
+      </div>
       {project.screenshots.length ? (
         <section className="case-section">
           <p className="eyebrow">GALLERY</p>
@@ -119,6 +139,9 @@ export default async function ProjectDetail({
                 key={image.id}
                 src={`/api/v1/media/${image.storage_key}`}
                 alt={image.alt_text ?? `${project.title} 截图`}
+                width={image.width}
+                height={image.height}
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             ))}
           </div>

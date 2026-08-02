@@ -6,6 +6,20 @@ export function MermaidBlock({ chart }: { chart: string }) {
   const reactId = useId();
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
+  const [theme, setTheme] = useState<"dark" | "default">("default");
+
+  useEffect(() => {
+    const sync = () => setTheme(
+      document.documentElement.dataset.theme === "dark" ? "dark" : "default",
+    );
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -15,14 +29,22 @@ export function MermaidBlock({ chart }: { chart: string }) {
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
-          theme: document.documentElement.dataset.theme === "dark" ? "dark" : "default",
+          theme,
         });
         const result = await mermaid.render(id, chart);
-        if (active) setSvg(result.svg);
+        if (active) {
+          setError("");
+          setSvg(result.svg);
+        }
       })
-      .catch(() => { if (active) setError("图表语法无法解析。"); });
+      .catch(() => {
+        if (active) {
+          setSvg("");
+          setError("图表语法无法解析。");
+        }
+      });
     return () => { active = false; };
-  }, [chart, reactId]);
+  }, [chart, reactId, theme]);
 
   if (error) return <p className="diagram-error">{error}</p>;
   if (!svg) return <div className="diagram-loading">正在绘制图表…</div>;

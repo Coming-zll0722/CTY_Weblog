@@ -9,7 +9,7 @@ import {
   ApiError,
   formatDate,
   getPost,
-  getPosts,
+  getPostContext,
   getPublicSettingsOrDefaults,
 } from "@/lib/api";
 import { extractHeadings } from "@/lib/markdown";
@@ -35,6 +35,12 @@ export async function generateMetadata({
         description: article.summary,
         publishedTime: article.published_at ?? undefined,
         modifiedTime: article.updated_at,
+        images: article.cover ? [{
+          url: `/api/v1/media/${article.cover.storage_key}`,
+          width: article.cover.width ?? undefined,
+          height: article.cover.height ?? undefined,
+          alt: article.cover.alt_text ?? article.title,
+        }] : undefined,
       },
     };
   } catch {
@@ -56,25 +62,13 @@ export default async function ArticleDetail({
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
-  const [{ data: articles }, settings] = await Promise.all([
-    getPosts(100),
+  const [context, settings] = await Promise.all([
+    getPostContext(article.slug),
     getPublicSettingsOrDefaults(),
   ]);
-  const index = articles.findIndex((item) => item.slug === slug);
-  const previous = index > 0 ? articles[index - 1] : undefined;
-  const next = index >= 0 ? articles[index + 1] : undefined;
+  const { previous, next, related } = context;
   const headings = extractHeadings(article.content_md);
   const canonicalUrl = absoluteSiteUrl(`/articles/${article.slug}`);
-  const related = articles
-    .filter((item) => item.id !== article.id)
-    .map((item) => ({
-      item,
-      score: item.tags.filter((tag) => article.tags.includes(tag)).length,
-    }))
-    .filter(({ score }) => score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, 3)
-    .map(({ item }) => item);
   const articleJsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Article",
@@ -84,6 +78,9 @@ export default async function ArticleDetail({
     dateModified: article.updated_at,
     mainEntityOfPage: canonicalUrl,
     author: { "@type": "Person", name: settings.authorName },
+    image: article.cover
+      ? absoluteSiteUrl(`/api/v1/media/${article.cover.storage_key}`)
+      : undefined,
   }).replace(/</g, "\\u003c");
 
   return (
@@ -109,6 +106,9 @@ export default async function ArticleDetail({
           <ZoomableImage
             src={`/api/v1/media/${article.cover.storage_key}`}
             alt={article.cover.alt_text ?? article.title}
+            width={article.cover.width}
+            height={article.cover.height}
+            sizes="(max-width: 900px) 100vw, 1120px"
           />
         ) : null}
       </header>
@@ -132,6 +132,18 @@ export default async function ArticleDetail({
           ))}
         </aside>
       </div>
+      {headings.length ? (
+        <details className="mobile-toc">
+          <summary>本文目录 · {headings.length} 节</summary>
+          <nav>
+            {headings.map((heading) => (
+              <a className={heading.level === 3 ? "toc-child" : ""} href={`#${heading.id}`} key={`mobile:${heading.id}`}>
+                {heading.title}
+              </a>
+            ))}
+          </nav>
+        </details>
+      ) : null}
       <nav className="article-pagination">
         {previous ? (
           <Link href={`/articles/${previous.slug}`}>

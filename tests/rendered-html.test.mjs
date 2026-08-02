@@ -65,6 +65,9 @@ function mockApi(input) {
   if (url.pathname === `/api/v1/posts/${post.slug}`) {
     return Response.json({ success: true, data: post });
   }
+  if (url.pathname === `/api/v1/posts/${post.slug}/context`) {
+    return Response.json({ success: true, data: { previous: null, next: null, related: [] } });
+  }
   if (url.pathname === "/api/v1/projects") {
     return Response.json({ success: true, data: [project], meta: { page: 1, page_size: 20, total: 1 } });
   }
@@ -144,7 +147,7 @@ test("server-renders the technical publication home page", async () => {
   assert.match(html, /settings@example\.com/);
   assert.match(html, /公开设置已生效/);
   assert.match(html, /工程资料/);
-  assert.match(html, /记录技术/);
+  assert.match(html, /可验证的问题/);
   assert.match(html, /嵌入式通信协议自动化测试平台/);
   assert.match(html, /2025 — 至今/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
@@ -152,8 +155,8 @@ test("server-renders the technical publication home page", async () => {
 
 test("server-renders core public routes", async () => {
   for (const [path, expected] of [
-    ["/articles", "工程问题"],
-    ["/projects", "完整实践"],
+    ["/articles", "验证答案的路径"],
+    ["/projects", "决策过程"],
     ["/stack", "实际使用"],
     ["/about", "软硬件边界"],
   ]) {

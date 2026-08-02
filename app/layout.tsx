@@ -22,9 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
       title: settings.siteName,
       description: settings.seoDescription,
       images: [{
-        url: new URL("/og.png", base),
-        width: 1734,
-        height: 907,
+        url: new URL("/og.webp", base),
+        width: 1200,
+        height: 630,
         alt: `${settings.siteName}：记录技术，也记录问题如何被解决`,
       }],
     },
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: settings.siteName,
       description: settings.seoDescription,
-      images: [new URL("/og.png", base)],
+      images: [new URL("/og.webp", base)],
     },
     alternates: { canonical: "/", types: { "application/rss+xml": "/rss.xml" } },
   };
@@ -48,6 +48,11 @@ export default async function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var saved=localStorage.getItem('theme');var dark=saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.style.colorScheme=dark?'dark':'light'}catch(_){document.documentElement.dataset.theme='light'}})();`,
+          }}
+        />
         {/* Vinext does not yet expose Next.js font/CSS asset handling for KaTeX. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href="/katex.min.css" />

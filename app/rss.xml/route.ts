@@ -1,4 +1,4 @@
-import { getAllPosts, getPublicSettingsOrDefaults } from "@/lib/api";
+import { getPosts, getPublicSettingsOrDefaults } from "@/lib/api";
 import { getSiteOrigin } from "@/lib/site-origin";
 
 const escapeXml = (value: string) =>
@@ -12,7 +12,7 @@ const escapeXml = (value: string) =>
 
 export async function GET(request: Request) {
   const [articles, settings] = await Promise.all([
-    getAllPosts(),
+    getPosts(20).then((response) => response.data),
     getPublicSettingsOrDefaults(),
   ]);
   const base = getSiteOrigin(new URL(request.url).origin);

@@ -1,5 +1,5 @@
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -234,19 +234,71 @@ class ManagementRepository:
         await self.session.commit()
         return await self.all_settings()
 
-    async def analytics_overview(self) -> dict[str, int]:
-        views = int((await self.session.scalar(select(func.count(PageView.id)))) or 0)
-        visitors = int(
+    async def analytics_overview(
+        self,
+        date_from: date | None = None,
+        date_to: date | None = None,
+    ) -> dict:
+        end_date = date_to or datetime.now(UTC).date()
+        start_date = date_from or end_date - timedelta(days=29)
+        if start_date > end_date:
+            raise AppError(422, "INVALID_DATE_RANGE", "开始日期不能晚于结束日期。")
+        start_at = datetime.combine(start_date, time.min, tzinfo=UTC)
+        end_at = datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=UTC)
+        window = [PageView.viewed_at >= start_at, PageView.viewed_at < end_at]
+        views = int(
+            (await self.session.scalar(select(func.count(PageView.id)).where(*window))) or 0
+        )
+        visitor_days = int(
             (
                 await self.session.scalar(
                     select(func.count(func.distinct(PageView.visitor_hash))).where(
-                        PageView.visitor_hash.is_not(None)
+                        *window,
+                        PageView.visitor_hash.is_not(None),
                     )
                 )
             )
             or 0
         )
-        return {"views": views, "visitors": visitors}
+        daily_rows = await self.session.execute(
+            select(
+                func.date(PageView.viewed_at).label("day"),
+                func.count(PageView.id).label("views"),
+                func.count(func.distinct(PageView.visitor_hash)).label("visitor_days"),
+            )
+            .where(*window)
+            .group_by(func.date(PageView.viewed_at))
+            .order_by(func.date(PageView.viewed_at))
+        )
+        popular_rows = await self.session.execute(
+            select(PageView.path, func.count(PageView.id).label("views"))
+            .where(*window)
+            .group_by(PageView.path)
+            .order_by(func.count(PageView.id).desc(), PageView.path.asc())
+            .limit(10)
+        )
+        return {
+            "views": views,
+            "visitor_days": visitor_days,
+            "date_from": start_date.isoformat(),
+            "date_to": end_date.isoformat(),
+            "daily": [
+                {
+                    "date": day.isoformat() if hasattr(day, "isoformat") else str(day),
+                    "views": int(day_views),
+                    "visitor_days": int(day_visitors),
+                }
+                for day, day_views, day_visitors in daily_rows
+            ],
+            "popular_pages": [
+                {"path": path, "views": int(path_views)}
+                for path, path_views in popular_rows
+            ],
+            "retention_note": (
+                "仅保存按日加盐的访客哈希，不保存原始 IP；建议保留 90 天明细，"
+                "之后仅保留每日与页面聚合。"
+            ),
+        }
 
     async def _audit(self, actor_id: UUID, action: str, record: Any) -> None:
         await self.session.flush()

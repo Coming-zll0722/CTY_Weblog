@@ -12,6 +12,14 @@ class MediaStorage(Protocol):
 
     def resolve(self, storage_key: str) -> Path | None: ...
 
+    def store_variant(
+        self, storage_key: str, body: bytes, width: int, extension: str
+    ) -> str: ...
+
+    def resolve_variant(
+        self, storage_key: str, width: int, extension: str
+    ) -> Path | None: ...
+
 
 class LocalMediaStorage:
     def __init__(self, root: Path) -> None:
@@ -33,6 +41,27 @@ class LocalMediaStorage:
         if self.root not in source.parents or not source.is_file():
             return None
         return source
+
+    def store_variant(
+        self, storage_key: str, body: bytes, width: int, extension: str
+    ) -> str:
+        variant_key = self._variant_key(storage_key, width, extension)
+        destination = (self.root / variant_key).resolve()
+        if self.root not in destination.parents:
+            raise ValueError("invalid storage path")
+        destination.write_bytes(body)
+        return variant_key
+
+    def resolve_variant(
+        self, storage_key: str, width: int, extension: str
+    ) -> Path | None:
+        return self.resolve(self._variant_key(storage_key, width, extension))
+
+    @staticmethod
+    def _variant_key(storage_key: str, width: int, extension: str) -> str:
+        if Path(storage_key).name != storage_key or extension not in {".webp", ".avif"}:
+            raise ValueError("invalid variant path")
+        return f"{Path(storage_key).stem}-{width}w{extension}"
 
 
 def get_media_storage() -> MediaStorage:

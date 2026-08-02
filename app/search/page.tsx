@@ -11,7 +11,20 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function SearchPage() {
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const requestedPage = Number(params.page ?? "1");
   const categories = await getCategories();
-  return <SearchClient categories={categories} />;
+  return (
+    <SearchClient
+      categories={categories}
+      initialQuery={(params.q ?? "").slice(0, 100)}
+      initialCategory={(params.category ?? "").slice(0, 100)}
+      initialPage={Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1}
+    />
+  );
 }
