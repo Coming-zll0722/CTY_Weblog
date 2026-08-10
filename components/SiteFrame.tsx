@@ -162,6 +162,15 @@ export function SiteFrame({
             <span>© {new Date().getFullYear()} {settings.authorName}</span>
             <span>{settings.footerNote}</span>
           </div>
+          <div className="footer-icp">
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              鲁ICP备2026044690号
+            </a>
+          </div>
         </div>
       </footer>
     </>
