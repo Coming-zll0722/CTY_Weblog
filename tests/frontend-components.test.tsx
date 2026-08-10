@@ -93,6 +93,15 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(screen.getByRole("navigation", { name: "主导航" })).toHaveClass("open");
 });
 
+test("footer exposes the ICP registration through the MIIT lookup", () => {
+  render(<SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>);
+
+  const registration = screen.getByRole("link", { name: "鲁ICP备2026044690号" });
+  expect(registration).toHaveAttribute("href", "https://beian.miit.gov.cn/");
+  expect(registration).toHaveAttribute("target", "_blank");
+  expect(registration).toHaveAttribute("rel", "noopener noreferrer");
+});
+
 test("code blocks copy their exact source", async () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("navigator", {
