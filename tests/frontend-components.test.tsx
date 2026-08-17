@@ -102,6 +102,21 @@ test("footer exposes the ICP registration through the MIIT lookup", () => {
   expect(registration).toHaveAttribute("rel", "noopener noreferrer");
 });
 
+test("footer exposes the public-security filing with the official badge", () => {
+  render(<SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>);
+
+  const filing = screen.getByRole("link", { name: "鲁公网安备37088102000564号" });
+  expect(filing).toHaveAttribute(
+    "href",
+    "https://beian.mps.gov.cn/#/query/webSearch?code=37088102000564",
+  );
+  expect(filing).toHaveAttribute("target", "_blank");
+  expect(filing).toHaveAttribute("rel", "noreferrer");
+  const badge = filing.querySelector("img");
+  expect(badge).toHaveAttribute("src", "/beian-gongan.png");
+  expect(badge).toHaveAttribute("alt", "");
+});
+
 test("code blocks copy their exact source", async () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
   vi.stubGlobal("navigator", {

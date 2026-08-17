@@ -170,6 +170,15 @@ export function SiteFrame({
             >
               鲁ICP备2026044690号
             </a>
+            <a
+              href="https://beian.mps.gov.cn/#/query/webSearch?code=37088102000564"
+              rel="noreferrer"
+              target="_blank"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/beian-gongan.png" alt="" width={16} height={16} />
+              鲁公网安备37088102000564号
+            </a>
           </div>
         </div>
       </footer>
