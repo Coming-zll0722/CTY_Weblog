@@ -87,31 +87,43 @@ export default async function ArticleDetail({
     <div className="section-shell article-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleJsonLd }} />
       <ReadingProgress />
-      <header className="article-hero">
+      <header className="article-header">
         <Link href="/articles" className="back-link">← 返回文章</Link>
-        {article.category_slug ? (
-          <Link className="article-category" href={`/categories/${article.category_slug}`}>
-            {article.category}
-          </Link>
-        ) : <span className="article-category">{article.category}</span>}
-        <h1>{article.title}</h1>
-        <p>{article.summary}</p>
         <div className="article-info">
+          {article.category_slug ? (
+            <Link className="article-category" href={`/categories/${article.category_slug}`}>
+              {article.category}
+            </Link>
+          ) : <span className="article-category">{article.category}</span>}
           <span>发布于 {formatDate(article.published_at)}</span>
           <span>更新于 {formatDate(article.updated_at)}</span>
-          <span>{article.reading_time} 分钟阅读</span>
+          <span>{article.reading_time} 分钟</span>
           <ShareLink title={article.title} url={canonicalUrl} />
         </div>
+        <h1>{article.title}</h1>
+        <p>{article.summary}</p>
         {article.cover ? (
           <ZoomableImage
             src={`/api/v1/media/${article.cover.storage_key}`}
             alt={article.cover.alt_text ?? article.title}
             width={article.cover.width}
             height={article.cover.height}
-            sizes="(max-width: 900px) 100vw, 1120px"
+            sizes="(max-width: 900px) 100vw, 720px"
           />
         ) : null}
       </header>
+      {headings.length ? (
+        <details className="mobile-toc">
+          <summary>本文目录 · {headings.length} 节</summary>
+          <nav>
+            {headings.map((heading) => (
+              <a className={heading.level === 3 ? "toc-child" : ""} href={`#${heading.id}`} key={`mobile:${heading.id}`}>
+                {heading.title}
+              </a>
+            ))}
+          </nav>
+        </details>
+      ) : null}
       <div className="article-layout">
         <article className="prose">
           <MarkdownContent source={article.content_md} />
@@ -132,18 +144,6 @@ export default async function ArticleDetail({
           ))}
         </aside>
       </div>
-      {headings.length ? (
-        <details className="mobile-toc">
-          <summary>本文目录 · {headings.length} 节</summary>
-          <nav>
-            {headings.map((heading) => (
-              <a className={heading.level === 3 ? "toc-child" : ""} href={`#${heading.id}`} key={`mobile:${heading.id}`}>
-                {heading.title}
-              </a>
-            ))}
-          </nav>
-        </details>
-      ) : null}
       <nav className="article-pagination">
         {previous ? (
           <Link href={`/articles/${previous.slug}`}>
@@ -157,15 +157,17 @@ export default async function ArticleDetail({
         ) : <span />}
       </nav>
       {related.length ? (
-        <section className="section-block">
-          <div className="section-heading compact"><div><p className="eyebrow">RELATED</p><h2>相关文章</h2></div></div>
-          <div className="project-grid">
+        <section className="related-list">
+          <div className="section-heading compact"><h2>相关文章</h2></div>
+          <div className="article-list">
             {related.map((item) => (
-              <Link className="project-card" href={`/articles/${item.slug}`} key={item.id}>
-                <span className="article-category">{item.category}</span>
-                <h3>{item.title}</h3>
-                <p>{item.summary}</p>
-              </Link>
+              <article className="article-row" key={item.id}>
+                <div>
+                  <span className="article-category">{item.category}</span>
+                  <h3><Link href={`/articles/${item.slug}`}>{item.title}</Link></h3>
+                  <p>{item.summary}</p>
+                </div>
+              </article>
             ))}
           </div>
         </section>

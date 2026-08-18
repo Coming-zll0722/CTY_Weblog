@@ -90,8 +90,8 @@ export function SearchClient({
   return (
     <div className="section-shell page-shell search-page">
       <header className="page-heading">
-        <p className="eyebrow">SEARCH / 搜索</p>
-        <h1>找到一条工程线索。</h1>
+        <h1>搜索</h1>
+        <p>按标题、摘要、分类或技术名查找文章和项目。</p>
       </header>
       <label className="search-box">
         <span aria-hidden="true">⌕</span>

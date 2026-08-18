@@ -15,14 +15,14 @@ export default async function CategoriesPage() {
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
-        <p className="eyebrow">CATEGORIES / 分类</p>
-        <h1>按主题阅读。</h1>
+        <h1>分类</h1>
         <p>从工程问题域进入文章归档。</p>
       </header>
-      <div className="capability-grid">
+      <div className="taxonomy-grid">
         {categories.map((item) => (
-          <Link className="project-card" href={`/categories/${item.slug}`} key={item.id}>
-            <h2>{item.name}</h2><p>{item.description}</p>
+          <Link href={`/categories/${item.slug}`} key={item.id}>
+            <h2>{item.name}</h2>
+            <p>{item.description}</p>
           </Link>
         ))}
         {!categories.length ? (

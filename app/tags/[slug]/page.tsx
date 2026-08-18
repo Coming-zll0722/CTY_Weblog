@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPosts, getTags } from "@/lib/api";
+import { formatDate, getPosts, getTags } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -36,17 +36,32 @@ export default async function TagPage({
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
-        <p className="eyebrow">TAG / 标签</p>
         <h1>#{tag.name}</h1>
         <p>该标签下共有 {meta.total} 篇已发布文章。</p>
       </header>
       <div className="article-list archive-list">
         {articles.map((article) => (
-          <Link href={`/articles/${article.slug}`} className="article-row" key={article.id}>
-            <div><h2>{article.title}</h2><p>{article.summary}</p></div>
-          </Link>
+          <article className="article-row" key={article.id}>
+            <div>
+              <h2><Link href={`/articles/${article.slug}`}>{article.title}</Link></h2>
+              <p>{article.summary}</p>
+            </div>
+            <aside>
+              <time dateTime={article.published_at ?? undefined}>{formatDate(article.published_at)}</time>
+              <span>{article.reading_time} 分钟</span>
+            </aside>
+          </article>
         ))}
-        {!articles.length ? <div className="empty-state"><h2>该标签暂时没有已发布文章</h2><p>可以返回全部文章，或按主题分类继续浏览。</p><div className="hero-actions"><Link href="/articles">全部文章</Link><Link href="/categories">主题分类</Link></div></div> : null}
+        {!articles.length ? (
+          <div className="empty-state">
+            <h2>该标签暂时没有已发布文章</h2>
+            <p>可以返回全部文章，或按主题分类继续浏览。</p>
+            <div className="hero-actions">
+              <Link href="/articles">全部文章</Link>
+              <Link href="/categories">主题分类</Link>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

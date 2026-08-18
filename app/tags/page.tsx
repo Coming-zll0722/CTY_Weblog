@@ -15,8 +15,8 @@ export default async function TagsPage() {
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
-        <p className="eyebrow">TAGS / 标签</p>
-        <h1>按技术线索查找。</h1>
+        <h1>标签</h1>
+        <p>按技术线索查找文章。</p>
       </header>
       <div className="tag-row">
         {tags.map((item) => <Link href={`/tags/${item.slug}`} key={item.id}>#{item.name}</Link>)}

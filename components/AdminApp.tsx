@@ -158,7 +158,6 @@ function AdminLogin({
 
   return (
     <form className="admin-login" onSubmit={submit} aria-busy={submitting}>
-      <p className="eyebrow">SECURE SIGN IN</p>
       <h2>登录内容工作台</h2>
       <label>
         管理员邮箱
