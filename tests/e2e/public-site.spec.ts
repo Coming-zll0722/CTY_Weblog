@@ -3,8 +3,8 @@ import { expect, test } from "@playwright/test";
 
 test("visitor can move from the publication home to a complete article", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("可验证的问题");
-  await page.getByRole("link", { name: "浏览工程文章" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("工程笔记");
+  await page.getByRole("link", { name: "阅读文章" }).first().click();
   await expect(page).toHaveURL(/\/articles$/);
   await page.getByRole("link", { name: "跨栈集成文章", exact: true }).click();
   await expect(page.getByRole("heading", { name: "跨栈集成文章", level: 1 })).toBeVisible();

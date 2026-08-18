@@ -28,30 +28,38 @@ export default async function ProjectsPage({
   const totalPages = Math.max(1, Math.ceil(meta.total / meta.page_size));
   return (
     <div className="section-shell page-shell projects-page">
-      <header className="page-heading editorial-heading">
-        <p className="eyebrow">CASE FILES / 项目案例</p>
-        <h1>把交付结果，<br />还原为决策过程。</h1>
-        <p>每个案例说明问题与限制、承担的职责、关键判断、验证方法和下一步。涉及工作内容时，只保留经过脱敏和重新建模的信息。</p>
+      <header className="page-heading">
+        <h1>项目</h1>
+        <p>每个案例说明问题、职责、判断与验证。涉及工作内容时，只保留经过脱敏和重新建模的信息。</p>
       </header>
-      <div className="project-archive">
-        {projects.map((project, index) => (
-          <article className={index === 0 && page === 1 ? "project-entry featured" : "project-entry"} key={project.id}>
-            <div className="project-entry-index"><span>{String((page - 1) * 12 + index + 1).padStart(2, "0")}</span><small>{project.status}</small></div>
-            <div className="project-entry-main">
-              <div className="project-meta"><span>{formatProjectPeriod(project.started_at, project.ended_at)}</span><span>{project.tags.slice(0, 3).join(" · ")}</span></div>
-              <h2><Link href={`/projects/${project.slug}`}>{project.title}</Link></h2>
-              <p className="project-deck">{project.summary}</p>
-              <dl className="project-preview-facts">
-                <div><dt>解决的问题</dt><dd>{project.problem_excerpt || "完整案例中说明问题背景与限制。"}</dd></div>
-                <div><dt>承担的职责</dt><dd>{project.role_excerpt || "完整案例中说明实际职责与工作边界。"}</dd></div>
-                <div><dt>关键判断</dt><dd>{project.decision_excerpt || "完整案例中说明架构选择与取舍。"}</dd></div>
-              </dl>
+      <div className="project-list">
+        {projects.map((project) => (
+          <article className="project-card" key={project.id}>
+            <div className="project-meta">
+              <span>{project.status}</span>
+              <span>{formatProjectPeriod(project.started_at, project.ended_at)}</span>
             </div>
-            <aside className="project-entry-aside"><p className="eyebrow">WHY READ</p><p>{project.result_excerpt || "阅读完整的问题拆解、验证路径与复盘。"}</p><Link href={`/projects/${project.slug}`}>进入案例 <span>↗</span></Link></aside>
+            <h2><Link href={`/projects/${project.slug}`}>{project.title}</Link></h2>
+            <p>{project.summary}</p>
+            <dl className="project-facts-inline">
+              <div>
+                <dt>问题</dt>
+                <dd>{project.problem_excerpt || "完整案例中说明问题背景与限制。"}</dd>
+              </div>
+            </dl>
+            {project.tags.length ? (
+              <div className="tag-row">
+                {project.tags.slice(0, 5).map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+            ) : null}
           </article>
         ))}
         {!projects.length ? (
-          <div className="empty-state"><h2>还没有公开项目</h2><p>项目完成保密检查后会出现在这里。你可以先从文章了解具体工程问题。</p><Link href="/articles">浏览工程文章 →</Link></div>
+          <div className="empty-state">
+            <h2>还没有公开项目</h2>
+            <p>项目完成保密检查后会出现在这里。你可以先从文章了解具体工程问题。</p>
+            <Link href="/articles">阅读文章</Link>
+          </div>
         ) : null}
       </div>
       {totalPages > 1 ? (
