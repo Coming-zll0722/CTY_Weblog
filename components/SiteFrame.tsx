@@ -92,7 +92,10 @@ export function SiteFrame({
       <aside className={menuOpen ? "site-sidebar open" : "site-sidebar"}>
         <div className="sidebar-panel">
           <Link href="/" className="brand" aria-label={`${settings.siteName}首页`}>
-            <span className="brand-mark">{settings.brandMark}</span>
+            <span className="brand-logo" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/fromtouyue-brand.png" alt="" width={1365} height={601} />
+            </span>
             <span className="brand-copy">
               <strong>{settings.siteName}</strong>
               <small>Engineering OS</small>
@@ -153,15 +156,10 @@ export function SiteFrame({
       <div className="site-workspace">
         <header className="workspace-header">
           <div>
-            <span className="workspace-eyebrow">CTY / KNOWLEDGE SYSTEM</span>
+            <span className="workspace-eyebrow">从头越 / KNOWLEDGE SYSTEM</span>
             <strong>{currentSection}</strong>
           </div>
           <div className="workspace-status">
-            <span><i /> 公开知识库</span>
-            <Link href="/search" className="icon-button" aria-label="搜索">⌕</Link>
-            <button className="icon-button" onClick={toggleTheme} aria-label="顶部主题切换">
-              {theme === "light" ? "◐" : "☼"}
-            </button>
             <button
               ref={menuButtonRef}
               className="menu-button"

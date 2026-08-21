@@ -252,9 +252,9 @@ export function OperationsManager({ csrf, onError }: ManagerProps) {
       <section className="admin-editor">
         <h3>网站与 SEO 设置</h3>
         <p>这里的公开信息会直接用于网站页眉、页脚、联系入口和搜索引擎元数据。</p>
-        <label>站点名称<input value={settingValue("public.site_name", "从头越.log")} onChange={(change) => setSettingValue("public.site_name", change.target.value)} /></label>
-        <label>作者名称<input value={settingValue("public.author_name", "林序")} onChange={(change) => setSettingValue("public.author_name", change.target.value)} /></label>
-        <label>品牌缩写<input maxLength={6} value={settingValue("public.brand_mark", "LOG")} onChange={(change) => setSettingValue("public.brand_mark", change.target.value)} /></label>
+        <label>站点名称<input value={settingValue("public.site_name", "从头越.blog")} onChange={(change) => setSettingValue("public.site_name", change.target.value)} /></label>
+        <label>作者名称<input value={settingValue("public.author_name", "从头越")} onChange={(change) => setSettingValue("public.author_name", change.target.value)} /></label>
+        <label>品牌缩写（兼容字段）<input maxLength={6} value={settingValue("public.brand_mark", "LOG")} onChange={(change) => setSettingValue("public.brand_mark", change.target.value)} /></label>
         <label>站点简介<textarea rows={3} value={settingValue("public.site_description", "记录技术实践、项目开发与持续学习。")} onChange={(change) => setSettingValue("public.site_description", change.target.value)} /></label>
         <label>SEO 描述<textarea rows={3} value={settingValue("public.seo_description", "嵌入式软件测试工程师的技术博客。")} onChange={(change) => setSettingValue("public.seo_description", change.target.value)} /></label>
         <label>SEO 关键词（逗号分隔）<input value={settingValue("public.seo_keywords", "嵌入式软件测试, 自动化测试")} onChange={(change) => setSettingValue("public.seo_keywords", change.target.value.split(",").map((item) => item.trim()).filter(Boolean))} /></label>

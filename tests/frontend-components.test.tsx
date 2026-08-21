@@ -77,7 +77,9 @@ describe("search", () => {
 
 test("theme and mobile navigation controls update accessible state", async () => {
   vi.useFakeTimers();
-  render(<SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>);
+  const { container } = render(
+    <SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>,
+  );
   await act(async () => {
     await vi.runOnlyPendingTimersAsync();
   });
@@ -85,7 +87,18 @@ test("theme and mobile navigation controls update accessible state", async () =>
   fireEvent.click(screen.getByRole("button", { name: "切换深浅色模式" }));
   expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   expect(localStorage.getItem("theme")).toBe("dark");
-  expect(screen.getByRole("button", { name: "顶部主题切换" })).toBeInTheDocument();
+  const workspaceHeader = container.querySelector(".workspace-header");
+  expect(workspaceHeader).not.toBeNull();
+  expect(within(workspaceHeader as HTMLElement).queryByText("公开知识库")).not.toBeInTheDocument();
+  expect(within(workspaceHeader as HTMLElement).queryByRole("link", { name: "搜索" }))
+    .not.toBeInTheDocument();
+  expect(within(workspaceHeader as HTMLElement).queryByRole("button", { name: "顶部主题切换" }))
+    .not.toBeInTheDocument();
+  expect(container.querySelector(".brand-logo img")).toHaveAttribute(
+    "src",
+    "/fromtouyue-brand.png",
+  );
+  expect(screen.getAllByText("从头越.blog").length).toBeGreaterThan(0);
 
   const menu = screen.getByRole("button", { name: "打开导航菜单" });
   expect(menu).toHaveAttribute("aria-expanded", "false");

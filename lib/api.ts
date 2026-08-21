@@ -121,12 +121,12 @@ export type PublicLink = {
 };
 
 export const defaultPublicSettings: PublicSettings = {
-  siteName: "从头越.log",
-  authorName: "林序",
+  siteName: "从头越.blog",
+  authorName: "从头越",
   brandMark: "LOG",
   siteDescription: "记录技术实践、项目开发与持续学习。",
   seoDescription:
-    "从头越.log：记录嵌入式通信测试、自动化工具、软件架构与工程实践的个人技术博客。",
+    "从头越.blog：记录嵌入式通信测试、自动化工具、软件架构与工程实践的个人技术博客。",
   seoKeywords: ["嵌入式软件测试", "自动化测试", "TCP UDP", "CAN", "Python", "C++", "FPGA"],
   contactEmail: "",
   githubUrl: "",
