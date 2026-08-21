@@ -19,12 +19,12 @@ from app.models import (
 
 _settings = get_settings()
 PUBLIC_SETTING_DEFAULTS: dict[str, Any] = {
-    "public.site_name": "从头越.log",
-    "public.author_name": "林序",
+    "public.site_name": "从头越.blog",
+    "public.author_name": "从头越",
     "public.brand_mark": "LOG",
     "public.site_description": "记录技术实践、项目开发与持续学习。",
     "public.seo_description": (
-        "从头越.log：记录嵌入式通信测试、自动化工具、"
+        "从头越.blog：记录嵌入式通信测试、自动化工具、"
         "软件架构与工程实践的个人技术博客。"
     ),
     "public.seo_keywords": [

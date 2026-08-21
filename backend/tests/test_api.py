@@ -471,7 +471,8 @@ async def test_taxonomy_and_settings_management(authenticated_client) -> None:
     public_settings = await client.get("/api/v1/settings/public")
     assert public_settings.json()["data"]["public.contact_email"] == "hello@example.com"
     assert "private.analytics_token" not in public_settings.json()["data"]
-    assert public_settings.json()["data"]["public.site_name"] == "从头越.log"
+    assert public_settings.json()["data"]["public.site_name"] == "从头越.blog"
+    assert public_settings.json()["data"]["public.author_name"] == "从头越"
     unknown_public = await client.patch(
         "/api/v1/admin/settings",
         headers=headers,

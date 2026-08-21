@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: settings.siteName,
       description: settings.seoDescription,
       images: [{
-        url: new URL("/og.webp", base),
+        url: new URL("/og.png", base),
         width: 1200,
         height: 630,
         alt: `${settings.siteName}：记录技术，也记录问题如何被解决`,
@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: settings.siteName,
       description: settings.seoDescription,
-      images: [new URL("/og.webp", base)],
+      images: [new URL("/og.png", base)],
     },
     alternates: { canonical: "/", types: { "application/rss+xml": "/rss.xml" } },
   };
