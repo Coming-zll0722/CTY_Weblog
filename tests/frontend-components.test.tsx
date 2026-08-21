@@ -85,6 +85,7 @@ test("theme and mobile navigation controls update accessible state", async () =>
   fireEvent.click(screen.getByRole("button", { name: "切换深浅色模式" }));
   expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   expect(localStorage.getItem("theme")).toBe("dark");
+  expect(screen.getByRole("button", { name: "顶部主题切换" })).toBeInTheDocument();
 
   const menu = screen.getByRole("button", { name: "打开导航菜单" });
   expect(menu).toHaveAttribute("aria-expanded", "false");
