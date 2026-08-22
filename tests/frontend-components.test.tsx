@@ -78,7 +78,7 @@ describe("search", () => {
 test("theme and mobile navigation controls update accessible state", async () => {
   vi.useFakeTimers();
   const { container } = render(
-    <SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>,
+    <SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>,
   );
   await act(async () => {
     await vi.runOnlyPendingTimersAsync();
@@ -99,6 +99,10 @@ test("theme and mobile navigation controls update accessible state", async () =>
     "/fromtouyue-brand.png",
   );
   expect(screen.getAllByText("从头越.blog").length).toBeGreaterThan(0);
+  expect(screen.getByRole("link", { name: "管理员入口" })).toHaveAttribute("href", "/admin");
+  expect(screen.getByText("欲与天公试比高？")).toBeInTheDocument();
+  expect(screen.getByText(`© ${new Date().getFullYear()} 从头越`)).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: /RSS/ })).not.toBeInTheDocument();
 
   const menu = screen.getByRole("button", { name: "打开导航菜单" });
   expect(menu).toHaveAttribute("aria-expanded", "false");
@@ -107,8 +111,8 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(screen.getByRole("navigation", { name: "主导航" })).toHaveClass("open");
 });
 
-test("footer exposes the ICP registration through the MIIT lookup", () => {
-  render(<SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>);
+test("sidebar exposes the ICP registration through the MIIT lookup", () => {
+  render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
 
   const registration = screen.getByRole("link", { name: "鲁ICP备2026044690号" });
   expect(registration).toHaveAttribute("href", "https://beian.miit.gov.cn/");
@@ -116,8 +120,8 @@ test("footer exposes the ICP registration through the MIIT lookup", () => {
   expect(registration).toHaveAttribute("rel", "noopener noreferrer");
 });
 
-test("footer exposes the public-security filing with the official badge", () => {
-  render(<SiteFrame settings={defaultPublicSettings} publicLinks={[]}><p>content</p></SiteFrame>);
+test("sidebar exposes the public-security filing with the official badge", () => {
+  render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
 
   const filing = screen.getByRole("link", { name: "鲁公网安备37088102000564号" });
   expect(filing).toHaveAttribute(
@@ -302,4 +306,9 @@ test("responsive stylesheet includes compact navigation and admin layouts", () =
   expect(css).toMatch(/\.main-nav\.open\s*\{\s*display:\s*flex/);
   expect(css).toMatch(/\.admin-workspace\s*\{\s*grid-template-columns:\s*1fr/);
   expect(css).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  expect(css).toMatch(/@font-face[\s\S]*maozedong-1\.ttf/);
+  expect(css).toMatch(/\.workspace-eyebrow\s*\{[^}]*font:\s*650 13px/);
+  expect(css).toMatch(/\.sidebar-filing a\s*\{[^}]*font-size:\s*12px/);
+  expect(readFileSync(path.join(process.cwd(), "public", "maozedong-1.ttf")).byteLength)
+    .toBeGreaterThan(100_000);
 });

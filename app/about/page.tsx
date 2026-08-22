@@ -67,11 +67,10 @@ export default async function AboutPage() {
       <section className="follow-up">
         <div>
           <h2>继续阅读</h2>
-          <p>可以订阅 RSS，也可以通过联系页查看已经公开的联系方式。</p>
+          <p>可以通过联系页查看已经公开的联系方式与订阅入口。</p>
         </div>
         <div className="hero-actions">
-          <a className="button primary" href="/rss.xml">订阅 RSS</a>
-          <Link className="button secondary" href="/contact">联系与纠错</Link>
+          <Link className="button primary" href="/contact">联系与纠错</Link>
         </div>
       </section>
     </div>
