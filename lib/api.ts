@@ -110,7 +110,6 @@ export type PublicSettings = {
   seoKeywords: string[];
   contactEmail: string;
   githubUrl: string;
-  footerNote: string;
 };
 
 export type PublicLink = {
@@ -130,7 +129,6 @@ export const defaultPublicSettings: PublicSettings = {
   seoKeywords: ["嵌入式软件测试", "自动化测试", "TCP UDP", "CAN", "Python", "C++", "FPGA"],
   contactEmail: "",
   githubUrl: "",
-  footerNote: "内容经过脱敏处理",
 };
 
 type ApiEnvelope<T> = { success: true; data: T };
@@ -300,7 +298,6 @@ export async function getPublicSettings(): Promise<PublicSettings> {
       defaultPublicSettings.contactEmail,
     ),
     githubUrl: publicSettingString(values, "public.github_url", defaultPublicSettings.githubUrl),
-    footerNote: publicSettingString(values, "public.footer_note", defaultPublicSettings.footerNote),
   };
 }
 

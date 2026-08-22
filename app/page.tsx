@@ -5,16 +5,14 @@ import {
   formatProjectPeriod,
   getPosts,
   getProjects,
-  getPublicSettingsOrDefaults,
 } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [articleResponse, projectResponse, settings] = await Promise.all([
+  const [articleResponse, projectResponse] = await Promise.all([
     getPosts(8),
     getProjects(3),
-    getPublicSettingsOrDefaults(),
   ]);
   const [featuredProject, ...moreProjects] = projectResponse.data;
   const latestArticle = articleResponse.data[0];
@@ -26,30 +24,21 @@ export default async function Home() {
           <span className="hero-kicker"><i /> Engineering Knowledge Dashboard</span>
           <h1 id="dashboard-title">把复杂工程问题，整理成可验证的解决路径。</h1>
           <p>
-            我是{settings.authorName}，电子信息工程背景的嵌入式软件测试工程师。
-            这里以问题边界、方案取舍和验证证据为主线，记录通信协议、测试自动化与工程工具实践。
+            因为懂得了全局性的东西，就更会使用局部性的东西，因为局部性的东西是隶属于全局性的东西的。
           </p>
           <div className="hero-actions">
             <Link className="button primary" href="/articles">进入知识库</Link>
             <Link className="button secondary" href="/projects">查看工程案例</Link>
           </div>
         </div>
-        <div className="hero-system-card" aria-label="工程知识整理方法">
-          <div className="system-card-head">
-            <span>WORKFLOW / 01</span>
-            <i>ACTIVE</i>
-          </div>
-          <div className="signal-orbit" aria-hidden="true">
-            <span className="orbit-core">CTY</span>
-            <i className="orbit-one" />
-            <i className="orbit-two" />
-            <i className="orbit-three" />
-          </div>
-          <div className="signal-steps">
-            <span><i className="status-cyan" />定义边界</span>
-            <span><i className="status-violet" />评估方案</span>
-            <span><i className="status-green" />验证结果</span>
-          </div>
+        <div className="hero-brand-card">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/fromtouyue-brand.png"
+            alt="从头越：雄关漫道真如铁，而今迈步从头越。"
+            width={1365}
+            height={601}
+          />
         </div>
       </section>
 

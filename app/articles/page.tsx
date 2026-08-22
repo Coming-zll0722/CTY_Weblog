@@ -83,7 +83,6 @@ export default async function ArticlesPage({
         <aside className="archive-side">
           <div><span>公开文章</span><strong>{meta.total}</strong></div>
           <div><span>当前页</span><strong>{page} / {totalPages}</strong></div>
-          <Link href="/rss.xml">订阅 RSS</Link>
         </aside>
       </div>
     </div>

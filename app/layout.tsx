@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { SiteFrame } from "@/components/SiteFrame";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
-import { getPublicLinksOrEmpty, getPublicSettingsOrDefaults } from "@/lib/api";
+import { getPublicSettingsOrDefaults } from "@/lib/api";
 import { getSiteOrigin } from "@/lib/site-origin";
 import "./globals.css";
 
@@ -41,10 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [settings, publicLinks] = await Promise.all([
-    getPublicSettingsOrDefaults(),
-    getPublicLinksOrEmpty(),
-  ]);
+  const settings = await getPublicSettingsOrDefaults();
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
@@ -59,7 +56,7 @@ export default async function RootLayout({
       </head>
       <body>
         <a className="skip-link" href="#main-content">跳到主要内容</a>
-        <SiteFrame settings={settings} publicLinks={publicLinks}>{children}</SiteFrame>
+        <SiteFrame settings={settings}>{children}</SiteFrame>
         <AnalyticsTracker />
       </body>
     </html>

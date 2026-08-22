@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getPublicSettingsOrDefaults } from "@/lib/api";
+import { getPublicLinksOrEmpty, getPublicSettingsOrDefaults } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "联系方式",
@@ -8,7 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const settings = await getPublicSettingsOrDefaults();
+  const [settings, publicLinks] = await Promise.all([
+    getPublicSettingsOrDefaults(),
+    getPublicLinksOrEmpty(),
+  ]);
   return (
     <div className="section-shell page-shell">
       <header className="page-heading">
@@ -19,19 +22,32 @@ export default async function ContactPage() {
         </p>
       </header>
       <section className="contact-panel">
-        <h2>{settings.contactEmail ? "邮件" : "联系方式正在配置"}</h2>
+        <h2>联系与订阅</h2>
         <p>
           {settings.contactEmail
             ? "邮件中请简要说明主题、背景与希望讨论的问题。"
-            : "管理员可在后台公开设置中补充联系邮箱。"}
+            : "联系邮箱正在配置，也可以先通过下方公开入口继续关注。"}
         </p>
-        {settings.contactEmail ? (
-          <div className="hero-actions">
+        <div className="hero-actions contact-actions">
+          {settings.contactEmail ? (
             <a className="button primary" href={`mailto:${settings.contactEmail}`}>
               {settings.contactEmail}
             </a>
-          </div>
-        ) : null}
+          ) : null}
+          {settings.githubUrl ? (
+            <a className="button secondary" href={settings.githubUrl} target="_blank" rel="noreferrer">
+              GitHub ↗
+            </a>
+          ) : null}
+          <a className="button secondary" href="/rss.xml">订阅 RSS</a>
+          {publicLinks
+            .filter((item) => item.url !== settings.githubUrl)
+            .map((item) => (
+              <a className="button secondary" href={item.url} target="_blank" rel="noreferrer" key={item.id}>
+                {item.name} ↗
+              </a>
+            ))}
+        </div>
       </section>
     </div>
   );

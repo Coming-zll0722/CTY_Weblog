@@ -144,12 +144,14 @@ test("server-renders the technical publication home page", async () => {
   assert.match(html, /<html lang="zh-CN"/i);
   assert.match(html, /测试作者/);
   assert.match(html, /可配置工程笔记/);
-  assert.match(html, /settings@example\.com/);
-  assert.match(html, /公开设置已生效/);
-  assert.match(html, /工程资料/);
+  assert.match(html, /因为懂得了全局性的东西/);
+  assert.match(html, /src="\/fromtouyue-brand\.png"/);
+  assert.match(html, /欲与天公试比高？/);
+  assert.match(html, /管理员入口/);
   assert.match(html, /工程笔记/);
   assert.match(html, /嵌入式通信协议自动化测试平台/);
   assert.match(html, /2025 — 至今/);
+  assert.doesNotMatch(html, /WORKFLOW|公开设置已生效|订阅 RSS/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -159,6 +161,7 @@ test("server-renders core public routes", async () => {
     ["/projects", "判断与验证"],
     ["/stack", "实际使用"],
     ["/about", "嵌入式软件测试"],
+    ["/contact", "联系与订阅"],
   ]) {
     const response = await render(path);
     assert.equal(response.status, 200, path);
@@ -166,6 +169,19 @@ test("server-renders core public routes", async () => {
   }
   const about = await render("/about");
   assert.match(await about.text(), /测试作者/);
+});
+
+test("offers the RSS subscription entry only on the contact page", async () => {
+  for (const path of ["/", "/articles", "/about"]) {
+    const response = await render(path);
+    assert.doesNotMatch(await response.text(), />订阅 RSS</, path);
+  }
+
+  const contact = await render("/contact");
+  const html = await contact.text();
+  assert.match(html, />订阅 RSS</);
+  assert.match(html, /settings@example\.com/);
+  assert.match(html, /工程资料/);
 });
 
 test("serves RSS with stable article links", async () => {

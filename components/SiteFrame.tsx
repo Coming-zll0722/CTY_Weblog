@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { PublicLink, PublicSettings } from "@/lib/api";
+import type { PublicSettings } from "@/lib/api";
 
 const navigation = [
   ["总览", "/", "⌂"],
@@ -18,11 +18,9 @@ const navigation = [
 export function SiteFrame({
   children,
   settings,
-  publicLinks,
 }: {
   children: React.ReactNode;
   settings: PublicSettings;
-  publicLinks: PublicLink[];
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -147,6 +145,9 @@ export function SiteFrame({
               <img src="/beian-gongan.png" alt="" width={16} height={16} />
               鲁公网安备37088102000564号
             </a>
+            <span className="sidebar-copyright">
+              © {new Date().getFullYear()} {settings.authorName}
+            </span>
           </div>
         </div>
       </aside>
@@ -160,6 +161,9 @@ export function SiteFrame({
             <strong>{currentSection}</strong>
           </div>
           <div className="workspace-status">
+            <Link className="workspace-admin-link" href="/admin" aria-label="管理员入口">
+              ADMIN 管理入口
+            </Link>
             <button
               ref={menuButtonRef}
               className="menu-button"
@@ -179,20 +183,8 @@ export function SiteFrame({
               <b>{settings.siteName}</b>
               <p>{settings.siteDescription}</p>
             </div>
-            <div>
-              <b>连接</b>
-              {settings.githubUrl ? (
-                <a href={settings.githubUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-              ) : null}
-              {settings.contactEmail ? <a href={`mailto:${settings.contactEmail}`}>Email ↗</a> : null}
-              <a href="/rss.xml">RSS ↗</a>
-              {publicLinks.slice(0, 2).map((item) => (
-                <a href={item.url} target="_blank" rel="noreferrer" key={item.id}>{item.name} ↗</a>
-              ))}
-            </div>
-            <div className="footer-note">
-              <span>© {new Date().getFullYear()} {settings.authorName}</span>
-              <span>{settings.footerNote}</span>
+            <div className="footer-quote" aria-label="欲与天公试比高？">
+              <p>欲与天公试比高？</p>
             </div>
           </div>
         </footer>

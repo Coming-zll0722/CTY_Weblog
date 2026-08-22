@@ -191,7 +191,6 @@ function AdminOverview() {
   return (
     <div className="admin-stats">
       <div><span>内容来源</span><strong>PostgreSQL</strong></div>
-      <div><span>发布保护</span><strong>保密检查</strong></div>
       <div><span>编辑保护</span><strong>版本锁</strong></div>
     </div>
   );
