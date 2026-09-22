@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { goals, homeProfile, techStack } from "@/data/home";
 import {
@@ -163,7 +164,7 @@ export function AboutCard() {
       </SectionHeader>
       <div className="about-card-body">
         <div className="about-avatar" aria-hidden="true">
-          <span>{homeProfile.name}</span>
+          <BrandMark />
         </div>
         <div>
           <h3>{homeProfile.name}</h3>

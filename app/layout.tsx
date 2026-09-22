@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(getSiteOrigin(`${protocol}://${host}`));
   return {
     metadataBase: base,
-    icons: { icon: "/favicon.svg" },
+    icons: { icon: { url: "/brand/icon-light.png", type: "image/png" }, apple: "/brand/icon-light.png" },
     title: { default: settings.siteName, template: `%s · ${settings.siteName}` },
     description: settings.seoDescription,
     keywords: settings.seoKeywords,
@@ -46,6 +46,7 @@ export default async function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{document.documentElement.dataset.layout=localStorage.getItem('site-layout')==='desktop'?'desktop':'auto'}catch(_){document.documentElement.dataset.layout='auto'}})();` }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var saved=localStorage.getItem('theme');var dark=saved==='dark'||(!saved&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.style.colorScheme=dark?'dark':'light'}catch(_){document.documentElement.dataset.theme='light'}})();`,

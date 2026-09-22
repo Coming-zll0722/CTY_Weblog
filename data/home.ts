@@ -26,23 +26,16 @@ export const navigation: {
   label: string;
   href: string;
   icon: IconName;
-  top?: boolean;
-  side?: boolean;
+  group: "home" | "content" | "personal";
 }[] = [
-  { label: "首页", href: "/", icon: "home", top: true, side: true },
-  { label: "文章", href: "/articles", icon: "article", top: true, side: true },
-  { label: "项目", href: "/projects", icon: "project", top: true, side: true },
-  { label: "笔记", href: "/notes", icon: "note", top: true, side: true },
-  { label: "技术栈", href: "/stack", icon: "chip", top: true },
-  {
-    label: "资源",
-    href: "/resources",
-    icon: "resource",
-    top: true,
-    side: true,
-  },
-  { label: "时间轴", href: "/timeline", icon: "timeline", side: true },
-  { label: "关于我", href: "/about", icon: "user", top: true, side: true },
+  { label: "首页", href: "/", icon: "home", group: "home" },
+  { label: "文章", href: "/articles", icon: "article", group: "content" },
+  { label: "项目", href: "/projects", icon: "project", group: "content" },
+  { label: "笔记", href: "/notes", icon: "note", group: "content" },
+  { label: "资源", href: "/resources", icon: "resource", group: "content" },
+  { label: "技术栈", href: "/stack", icon: "chip", group: "personal" },
+  { label: "时间轴", href: "/timeline", icon: "timeline", group: "personal" },
+  { label: "关于我", href: "/about", icon: "user", group: "personal" },
 ];
 
 // Planning examples, not recorded activity. Their source is labeled in the UI.

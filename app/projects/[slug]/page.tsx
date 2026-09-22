@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { ZoomableImage } from "@/components/ZoomableImage";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { ApiError, getProject, getPublicSettingsOrDefaults } from "@/lib/api";
 import { absoluteSiteUrl } from "@/lib/site-origin";
 
@@ -100,7 +101,7 @@ export default async function ProjectDetail({
   return (
     <div className="section-shell project-detail page-shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: projectJsonLd }} />
-      <Link href="/projects" className="back-link">← 返回项目</Link>
+      <Breadcrumbs section="项目" href="/projects" title={project.title} />
       <header>
         <div className="project-meta">
           <span>{project.status}</span>
