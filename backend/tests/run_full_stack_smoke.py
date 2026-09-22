@@ -148,6 +148,8 @@ def main() -> None:
                 "DATABASE_URL": database_url,
                 "SECRET_KEY": "integration-only-secret-key-at-least-32-bytes",
                 "API_BASE_URL": "http://127.0.0.1:8765/api/v1",
+                "NEXT_PUBLIC_API_BASE_URL": "http://127.0.0.1:8765/api/v1",
+                "CORS_ORIGINS": '["http://127.0.0.1:8766"]',
                 "SITE_URL": "https://devlelin.xyz",
             }
         )

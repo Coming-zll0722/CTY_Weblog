@@ -87,31 +87,37 @@ test("theme and mobile navigation controls update accessible state", async () =>
   fireEvent.click(screen.getByRole("button", { name: "切换深浅色模式" }));
   expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   expect(localStorage.getItem("theme")).toBe("dark");
-  const workspaceHeader = container.querySelector(".workspace-header");
-  expect(workspaceHeader).not.toBeNull();
-  expect(within(workspaceHeader as HTMLElement).queryByText("公开知识库")).not.toBeInTheDocument();
-  expect(within(workspaceHeader as HTMLElement).queryByRole("link", { name: "搜索" }))
-    .not.toBeInTheDocument();
-  expect(within(workspaceHeader as HTMLElement).queryByRole("button", { name: "顶部主题切换" }))
-    .not.toBeInTheDocument();
-  expect(container.querySelector(".brand-logo img")).toHaveAttribute(
-    "src",
-    "/fromtouyue-brand.png",
-  );
-  expect(screen.getAllByText("从头越.blog").length).toBeGreaterThan(0);
+  const header = container.querySelector(".personal-topbar");
+  expect(header).not.toBeNull();
+  const search = within(header as HTMLElement).getByRole("search");
+  expect(search).toHaveAttribute("action", "/search");
+  expect(within(search).getByRole("textbox")).toHaveAttribute("name", "q");
   expect(screen.getByRole("link", { name: "管理员入口" })).toHaveAttribute("href", "/admin");
-  expect(screen.getByText("欲与天公试比高？")).toBeInTheDocument();
-  expect(screen.getByText(`© ${new Date().getFullYear()} 从头越`)).toBeInTheDocument();
+  expect(screen.getByText(/© .*从头越.*从头越.blog/)).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: /RSS/ })).not.toBeInTheDocument();
 
   const menu = screen.getByRole("button", { name: "打开导航菜单" });
   expect(menu).toHaveAttribute("aria-expanded", "false");
   fireEvent.click(menu);
   expect(menu).toHaveAttribute("aria-expanded", "true");
-  expect(screen.getByRole("navigation", { name: "主导航" })).toHaveClass("open");
+  const dialog = screen.getByRole("dialog", { name: "导航菜单" });
+  expect(dialog).toHaveAttribute("aria-modal", "true");
+  expect(within(dialog).getByRole("link", { name: "资源" })).toHaveAttribute("href", "/resources");
+  expect(document.body.style.overflow).toBe("hidden");
+  const first = within(dialog).getByRole("button", { name: "关闭导航" });
+  const last = within(dialog).getByRole("link", { name: "联系" });
+  expect(first).toHaveFocus();
+  fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+  expect(last).toHaveFocus();
+  fireEvent.keyDown(window, { key: "Tab" });
+  expect(first).toHaveFocus();
+  fireEvent.keyDown(window, { key: "Escape" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(document.body.style.overflow).toBe("");
+  expect(menu).toHaveFocus();
 });
 
-test("sidebar exposes the ICP registration through the MIIT lookup", () => {
+test("footer exposes the ICP registration through the MIIT lookup", () => {
   render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
 
   const registration = screen.getByRole("link", { name: "鲁ICP备2026044690号" });
@@ -120,7 +126,7 @@ test("sidebar exposes the ICP registration through the MIIT lookup", () => {
   expect(registration).toHaveAttribute("rel", "noopener noreferrer");
 });
 
-test("sidebar exposes the public-security filing with the official badge", () => {
+test("footer exposes the public-security filing with the official badge", () => {
   render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
 
   const filing = screen.getByRole("link", { name: "鲁公网安备37088102000564号" });
@@ -307,8 +313,6 @@ test("responsive stylesheet includes compact navigation and admin layouts", () =
   expect(css).toMatch(/\.admin-workspace\s*\{\s*grid-template-columns:\s*1fr/);
   expect(css).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
   expect(css).toMatch(/@font-face[\s\S]*maozedong-1\.ttf/);
-  expect(css).toMatch(/\.workspace-eyebrow\s*\{[^}]*font:\s*650 13px/);
-  expect(css).toMatch(/\.sidebar-filing a\s*\{[^}]*font-size:\s*12px/);
   expect(readFileSync(path.join(process.cwd(), "public", "maozedong-1.ttf")).byteLength)
     .toBeGreaterThan(100_000);
 });

@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(getSiteOrigin(`${protocol}://${host}`));
   return {
     metadataBase: base,
+    icons: { icon: "/favicon.svg" },
     title: { default: settings.siteName, template: `%s · ${settings.siteName}` },
     description: settings.seoDescription,
     keywords: settings.seoKeywords,
