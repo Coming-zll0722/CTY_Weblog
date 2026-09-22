@@ -144,9 +144,11 @@ test("server-renders the technical publication home page", async () => {
   assert.match(html, /<html lang="zh-CN"/i);
   assert.match(html, /测试作者/);
   assert.match(html, /可配置工程笔记/);
-  assert.match(html, /因为懂得了全局性的东西/);
-  assert.match(html, /src="\/fromtouyue-brand\.png"/);
-  assert.match(html, /欲与天公试比高？/);
+  assert.match(html, /雄关漫道真如铁，而今迈步从头越/);
+  assert.match(html, /src="\/home\/mountain-journey\.webp"/);
+  assert.match(html, /计划示例/);
+  assert.match(html, /GitHub 提交 · 待接入/);
+  assert.match(html, /概念界面 · 非实际截图/);
   assert.match(html, /管理员入口/);
   assert.match(html, /工程笔记/);
   assert.match(html, /嵌入式通信协议自动化测试平台/);
@@ -158,6 +160,8 @@ test("server-renders the technical publication home page", async () => {
 test("server-renders core public routes", async () => {
   for (const [path, expected] of [
     ["/articles", "问题排查"],
+    ["/notes", "学习笔记"],
+    ["/resources", "技术资料"],
     ["/projects", "判断与验证"],
     ["/stack", "实际使用"],
     ["/about", "嵌入式软件测试"],
