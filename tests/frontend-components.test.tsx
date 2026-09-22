@@ -105,7 +105,7 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(within(dialog).getByRole("link", { name: "资源" })).toHaveAttribute("href", "/resources");
   expect(document.body.style.overflow).toBe("hidden");
   const first = within(dialog).getByRole("button", { name: "关闭导航" });
-  const last = within(dialog).getByRole("link", { name: "联系" });
+  const last = within(dialog).getByRole("button", { name: "桌面" });
   expect(first).toHaveFocus();
   fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
   expect(last).toHaveFocus();
@@ -115,6 +115,18 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(document.body.style.overflow).toBe("");
   expect(menu).toHaveFocus();
+});
+
+test("site uses one complete grouped navigation and keeps the header for tools", () => {
+  render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
+  expect(within(screen.getByRole("banner")).queryByRole("navigation")).not.toBeInTheDocument();
+  const sidebar = screen.getByRole("navigation", { name: "侧栏导航" });
+  const labels = ["首页", "文章", "项目", "笔记", "资源", "技术栈", "时间轴", "关于我"];
+  expect(within(sidebar).getAllByRole("link").map((link) => link.textContent)).toEqual(labels);
+  expect(within(sidebar).getByRole("link", { name: "技术栈" })).toHaveAttribute("href", "/stack");
+  fireEvent.click(screen.getByRole("button", { name: "打开导航菜单" }));
+  const mobile = screen.getByRole("navigation", { name: "移动导航" });
+  expect(within(mobile).getAllByRole("link").map((link) => link.textContent)).toEqual([...labels, "联系"]);
 });
 
 test("footer exposes the ICP registration through the MIIT lookup", () => {

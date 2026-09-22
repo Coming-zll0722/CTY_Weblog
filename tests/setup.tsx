@@ -22,5 +22,6 @@ afterEach(() => {
   document.cookie = "engineering_notes_csrf=; Max-Age=0; path=/";
   document.cookie = "engineering_notes_session=; Max-Age=0; path=/";
   document.documentElement.removeAttribute("data-theme");
+  document.documentElement.removeAttribute("data-layout");
   vi.useRealTimers();
 });

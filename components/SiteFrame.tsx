@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { PublicSettings } from "@/lib/api";
+import type { LayoutMode } from "@/components/layout/LayoutChoice";
 import {
   MobileNavigation,
   Sidebar,
@@ -20,13 +21,39 @@ export function SiteFrame({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [layout, setLayout] = useState<LayoutMode>("auto");
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const recoveryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (layout !== "desktop") return;
+    const viewport = window.visualViewport;
+    const recovery = recoveryRef.current;
+    if (!viewport || !recovery) return;
+    const positionRecovery = () => {
+      recovery.style.top = `${Math.max(12, viewport.offsetTop + viewport.height - recovery.offsetHeight - 12)}px`;
+      recovery.style.left = `${viewport.offsetLeft + 12}px`;
+      recovery.style.maxWidth = `${Math.max(0, viewport.width - 24)}px`;
+    };
+    positionRecovery();
+    viewport.addEventListener("resize", positionRecovery);
+    viewport.addEventListener("scroll", positionRecovery);
+    window.addEventListener("resize", positionRecovery);
+    return () => {
+      viewport.removeEventListener("resize", positionRecovery);
+      viewport.removeEventListener("scroll", positionRecovery);
+      window.removeEventListener("resize", positionRecovery);
+    };
+  }, [layout]);
 
   useEffect(() => {
     const next =
       document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    const timer = window.setTimeout(() => setTheme(next), 0);
+    const timer = window.setTimeout(() => {
+      setTheme(next);
+      setLayout(document.documentElement.dataset.layout === "desktop" ? "desktop" : "auto");
+    }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -52,7 +79,7 @@ export function SiteFrame({
         }
       }
     };
-    const desktop = matchMedia("(min-width: 1280px)");
+    const desktop = matchMedia("(min-width: 1024px)");
     const onResize = () => {
       if (desktop.matches) setMenuOpen(false);
     };
@@ -62,9 +89,21 @@ export function SiteFrame({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", close);
       desktop.removeEventListener("change", onResize);
-      trigger?.focus();
+      if (trigger && getComputedStyle(trigger).display !== "none") trigger.focus();
     };
   }, [menuOpen]);
+
+  function changeLayout(next: LayoutMode) {
+    setLayout(next);
+    document.documentElement.dataset.layout = next;
+    try {
+      localStorage.setItem("site-layout", next);
+    } catch {
+      /* The current page still changes when storage is unavailable. */
+    }
+    setMenuOpen(false);
+    window.scrollTo({ left: 0, behavior: "instant" });
+  }
 
   function toggleTheme() {
     const next = theme === "light" ? "dark" : "light";
@@ -79,6 +118,8 @@ export function SiteFrame({
   }
 
   return (
+    <>
+    <div className="site-layout">
     <div className="personal-site">
       <TopNavigation
         theme={theme}
@@ -88,7 +129,7 @@ export function SiteFrame({
         buttonRef={menuButtonRef}
       />
       <div className="personal-body">
-        <Sidebar />
+        <Sidebar layout={layout} onLayoutChange={changeLayout} />
         <div className="personal-main">
           <main id="main-content">{children}</main>
           <footer className="personal-footer">
@@ -119,11 +160,19 @@ export function SiteFrame({
           </footer>
         </div>
       </div>
+    </div>
+    </div>
+      <div className="layout-recovery" ref={recoveryRef}>
+        <span>桌面布局 · 可左右滑动</span>
+        <button type="button" onClick={() => changeLayout("auto")}>恢复自动布局</button>
+      </div>
       <MobileNavigation
         open={menuOpen}
         navRef={navRef}
         onClose={() => setMenuOpen(false)}
+        layout={layout}
+        onLayoutChange={changeLayout}
       />
-    </div>
+    </>
   );
 }

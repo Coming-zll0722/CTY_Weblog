@@ -5,20 +5,22 @@ import { usePathname } from "next/navigation";
 import type { RefObject } from "react";
 import { homeProfile, navigation } from "@/data/home";
 import { Icon } from "@/components/ui/Icon";
+import { BrandMark } from "@/components/ui/BrandMark";
+import { LayoutChoice, type LayoutMode } from "./LayoutChoice";
 
 function NavigationLinks({
-  variant,
+  group,
   onNavigate,
 }: {
-  variant: "top" | "side" | "mobile";
+  group: "home" | "content" | "personal";
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   return navigation
-    .filter((item) => variant === "mobile" || item[variant])
+    .filter((item) => item.group === group)
     .map((item) => {
       const active =
-        item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
       return (
         <Link
           href={item.href}
@@ -27,15 +29,27 @@ function NavigationLinks({
           aria-current={active ? "page" : undefined}
           onClick={onNavigate}
         >
-          {variant !== "top" && (
-            <span className="rail-icon">
-              <Icon name={item.icon} />
-            </span>
-          )}
+          <span className="rail-icon"><Icon name={item.icon} /></span>
           <span>{item.label}</span>
         </Link>
       );
     });
+}
+
+function NavigationGroups({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <>
+      <div className="navigation-group"><NavigationLinks group="home" onNavigate={onNavigate} /></div>
+      <div className="navigation-group" role="group" aria-label="内容">
+        <p className="navigation-group-label" aria-hidden="true">内容</p>
+        <NavigationLinks group="content" onNavigate={onNavigate} />
+      </div>
+      <div className="navigation-group" role="group" aria-label="个人">
+        <p className="navigation-group-label" aria-hidden="true">个人</p>
+        <NavigationLinks group="personal" onNavigate={onNavigate} />
+      </div>
+    </>
+  );
 }
 
 export function TopNavigation({
@@ -54,35 +68,12 @@ export function TopNavigation({
   return (
     <header className="personal-topbar">
       <Link href="/" className="personal-brand" aria-label="从头越首页">
-        <svg
-          width="40"
-          height="42"
-          viewBox="0 0 40 42"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M6 35C9 17 15 5 30 6M14 35c2-10 7-15 14-15"
-            stroke="currentColor"
-            strokeWidth="8"
-            strokeLinecap="round"
-          />
-          <path
-            d="m20 34 5-5 5 5"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <BrandMark />
         <span>
           <strong>{homeProfile.brand}</strong>
           <small>{homeProfile.domain}</small>
         </span>
       </Link>
-      <nav className="top-links" aria-label="顶部导航">
-        <NavigationLinks variant="top" />
-      </nav>
       <div className="top-tools">
         <form action="/search" role="search" className="top-search">
           <Icon name="search" size={17} />
@@ -124,13 +115,6 @@ export function TopNavigation({
         >
           <Icon name="code" />
         </Link>
-        <Link
-          href="/about"
-          className="profile-monogram"
-          aria-label={`关于${homeProfile.name}`}
-        >
-          {homeProfile.name}
-        </Link>
         <button
           ref={buttonRef}
           className="tool-button mobile-menu-trigger"
@@ -146,12 +130,13 @@ export function TopNavigation({
   );
 }
 
-export function Sidebar() {
+export function Sidebar({ layout, onLayoutChange }: { layout: LayoutMode; onLayoutChange: (mode: LayoutMode) => void }) {
   return (
     <aside className="personal-sidebar">
       <nav aria-label="侧栏导航">
-        <NavigationLinks variant="side" />
+        <NavigationGroups />
       </nav>
+      <LayoutChoice mode={layout} onChange={onLayoutChange} />
       <div className="rail-quote">
         <p>
           雄关漫道真如铁，
@@ -169,10 +154,14 @@ export function MobileNavigation({
   open,
   navRef,
   onClose,
+  layout,
+  onLayoutChange,
 }: {
   open: boolean;
   navRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
+  layout: LayoutMode;
+  onLayoutChange: (mode: LayoutMode) => void;
 }) {
   if (!open) return null;
   return (
@@ -192,7 +181,7 @@ export function MobileNavigation({
         id="mobile-navigation"
       >
         <div className="drawer-heading">
-          <strong>从头越</strong>
+          <span className="drawer-brand"><BrandMark /><strong>从头越</strong></span>
           <button
             className="tool-button"
             onClick={onClose}
@@ -202,7 +191,7 @@ export function MobileNavigation({
           </button>
         </div>
         <nav aria-label="移动导航">
-          <NavigationLinks variant="mobile" onNavigate={onClose} />
+          <NavigationGroups onNavigate={onClose} />
           <Link href="/contact" onClick={onClose}>
             <span className="rail-icon">
               <Icon name="mail" />
@@ -210,6 +199,8 @@ export function MobileNavigation({
             联系
           </Link>
         </nav>
+        <Link className="drawer-admin" href="/admin" onClick={onClose}>管理入口</Link>
+        <LayoutChoice mode={layout} onChange={onLayoutChange} />
         <p className="drawer-slogan">{homeProfile.slogan}</p>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { MarkdownContent } from "@/components/MarkdownContent";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import { ZoomableImage } from "@/components/ZoomableImage";
 import { ShareLink } from "@/components/ShareLink";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import {
   ApiError,
   formatDate,
@@ -88,7 +89,7 @@ export default async function ArticleDetail({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleJsonLd }} />
       <ReadingProgress />
       <header className="article-header">
-        <Link href="/articles" className="back-link">← 返回文章</Link>
+        <Breadcrumbs section="文章" href="/articles" title={article.title} />
         <div className="article-info">
           {article.category_slug ? (
             <Link className="article-category" href={`/categories/${article.category_slug}`}>

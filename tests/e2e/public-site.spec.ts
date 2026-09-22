@@ -40,21 +40,21 @@ test("home adapts across breakpoints without overflow or browser errors", async 
   expect(errors).toEqual([]);
 });
 
-test("mobile navigation restores focus and keeps project before status", async ({ page }) => {
+test("mobile navigation restores focus and keeps the same content order", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator(".home-project")).toBeVisible();
   await expect(page.locator(".home-status")).toBeVisible();
   const project = await page.locator(".home-project").boundingBox();
   const status = await page.locator(".home-status").boundingBox();
-  expect(project!.y).toBeLessThan(status!.y);
+  expect(status!.y).toBeLessThan(project!.y);
   const trigger = page.getByRole("button", { name: "打开导航菜单" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "导航菜单" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "关闭导航" })).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  await expect(dialog.getByRole("link", { name: "联系" })).toBeFocused();
+  await expect(dialog.getByRole("button", { name: "桌面", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   await expect(trigger).toBeFocused();
