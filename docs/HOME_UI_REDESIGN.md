@@ -6,7 +6,7 @@
 
 以 1536px 桌面参考图为优先，完成 Design Token、顶部导航、桌面侧栏、移动导航抽屉和三行 Bento Grid。首页包含 Hero、近期文章、当前状态、精选项目、技术栈、目标、最新动态、学习与生活、关于我九个区域。完成平板/手机重排、深色模式、键盘焦点、抽屉焦点约束与恢复、减少动画支持。
 
-沿用现有 React/Vinext SSR、API、主题存储、SEO、Markdown、文章/项目详情、搜索和后台。没有修改数据库模型、迁移或后端源文件；没有实现通知系统。备案与联系入口保留。
+沿用现有 React/Vinext SSR、API、主题存储、SEO、Markdown、文章/项目详情、搜索和后台。没有修改数据库模型、迁移或后端业务源文件；没有实现通知系统。备案与联系入口保留。
 
 ## 文件清单
 
@@ -32,6 +32,7 @@
 | `tests/frontend-components.test.tsx` | 主题、导航、抽屉焦点、原有页脚等回归 |
 | `tests/rendered-html.test.mjs` | SSR 文案及新增路由检查，保留安全与 RSS 回归 |
 | `tests/e2e/public-site.spec.ts` | 导航、断点、主题、搜索、无障碍浏览器测试 |
+| `backend/tests/run_full_stack_smoke.py` | 为隔离集成测试显式设置浏览器 API 地址与 CORS 来源 |
 | `docs/HOME_UI_REDESIGN.md` | 本交付说明与图片生成记录 |
 
 ## 数据来源

@@ -17,6 +17,7 @@ test("visitor can move from the dashboard home to a complete article", async ({ 
 test("core public pages have no serious axe violations", async ({ page }) => {
   for (const route of ["/", "/articles", "/projects", "/notes", "/resources", "/about", "/admin"]) {
     await page.goto(route);
+    await expect(page.locator("h1").first()).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter((item) =>
       item.impact === "serious" || item.impact === "critical"
@@ -28,8 +29,10 @@ test("core public pages have no serious axe violations", async ({ page }) => {
 test("home adapts across breakpoints without overflow or browser errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  page.on("console", (message) => { if (message.type() === "error") errors.push(`${message.text()} ${message.location().url}`); });
   await page.goto("/");
+  await expect(page.locator(".home-project")).toBeVisible();
+  await expect(page.locator(".home-status")).toBeVisible();
   for (const width of [320, 375, 390, 768, 1024, 1279, 1280, 1440, 1536, 1920]) {
     await page.setViewportSize({ width, height: 1024 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), { message: `${width}px overflow` }).toBe(true);
@@ -40,6 +43,8 @@ test("home adapts across breakpoints without overflow or browser errors", async 
 test("mobile navigation restores focus and keeps project before status", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await expect(page.locator(".home-project")).toBeVisible();
+  await expect(page.locator(".home-status")).toBeVisible();
   const project = await page.locator(".home-project").boundingBox();
   const status = await page.locator(".home-status").boundingBox();
   expect(project!.y).toBeLessThan(status!.y);
