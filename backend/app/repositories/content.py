@@ -47,8 +47,8 @@ class ContentRepository:
                     Post.published_at <= datetime.now(UTC),
                 ]
             )
-        order_columns = [Post.published_at.desc(), Post.created_at.desc()]
-        if q:
+        order_columns = [Post.published_at.desc(), Post.created_at.desc(), Post.id.asc()]
+        if q and q.strip():
             pattern = f"%{q.strip()}%"
             tag_posts = (
                 select(PostTag.post_id)
@@ -73,32 +73,28 @@ class ContentRepository:
                     else_=1,
                 ).desc(),
                 Post.published_at.desc(),
+                Post.id.asc(),
             ]
-        statement = select(Post).where(*filters)
-        count_statement = select(func.count(func.distinct(Post.id))).where(*filters)
+        # Membership filters keep one row per post. DISTINCT with the computed
+        # relevance ORDER BY is rejected by PostgreSQL (but accepted by SQLite).
         if category:
-            statement = statement.join(Category, Post.category_id == Category.id).where(
-                Category.slug == category, Category.deleted_at.is_(None)
-            )
-            count_statement = count_statement.join(
-                Category, Post.category_id == Category.id
-            ).where(Category.slug == category, Category.deleted_at.is_(None))
+            filters.append(Post.category_id.in_(
+                select(Category.id).where(
+                    Category.slug == category, Category.deleted_at.is_(None)
+                )
+            ))
         if tag:
-            statement = (
-                statement.join(PostTag, PostTag.post_id == Post.id)
+            filters.append(Post.id.in_(
+                select(PostTag.post_id)
                 .join(Tag, Tag.id == PostTag.tag_id)
                 .where(Tag.slug == tag, Tag.deleted_at.is_(None))
-            )
-            count_statement = (
-                count_statement.join(PostTag, PostTag.post_id == Post.id)
-                .join(Tag, Tag.id == PostTag.tag_id)
-                .where(Tag.slug == tag, Tag.deleted_at.is_(None))
-            )
+            ))
+        statement = select(Post).where(*filters)
+        count_statement = select(func.count(Post.id)).where(*filters)
         statement = (
             statement.order_by(*order_columns)
             .offset((page - 1) * page_size)
             .limit(page_size)
-            .distinct()
         )
         posts = list((await self.session.scalars(statement)).all())
         total = int((await self.session.scalar(count_statement)) or 0)

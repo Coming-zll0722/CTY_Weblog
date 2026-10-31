@@ -444,7 +444,7 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
 }
 .hero-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: auto 0 0;
   padding-top: 38px;
   color: #fff;
@@ -470,7 +470,7 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
   color: #e2e7ef;
 }
 .home-recent {
-  grid-column: span 6;
+  grid-column: span 10;
 }
 .home-status {
   grid-column: span 4;
@@ -1087,11 +1087,13 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
   font-size: 9px;
 }
 .home-activity {
-  grid-column: span 8;
+  grid-column: span 10;
 }
-.home-learning,
-.home-about {
+.home-learning {
   grid-column: span 6;
+}
+.home-about {
+  grid-column: span 10;
 }
 .home-activity,
 .home-learning,
@@ -1485,7 +1487,8 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
   .home-hero {
     order: 1;
   }
-  .home-recent {
+  .home-bento > .home-recent {
+    grid-column: 1 / -1;
     order: 2;
   }
   .home-status {
@@ -1501,7 +1504,8 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
   .home-goals {
     order: 6;
   }
-  .home-activity {
+  .home-bento > .home-activity {
+    grid-column: 1 / -1;
     order: 7;
   }
   .home-learning {
@@ -1960,4 +1964,20 @@ html[data-layout="desktop"] .site-layout { min-width: 1280px; }
   .personal-sidebar { display: none; }
   .personal-body { display: block; }
   .mobile-menu-trigger { display: inline-grid; }
+}
+
+/* Public homepage uses real content; planning widgets remain available separately. */
+.hero-introduction {
+  max-width: 34em;
+  margin: 12px 0 0;
+  color: #25334b;
+  font-size: 14px;
+  line-height: 1.8;
+}
+[data-theme="dark"] .hero-introduction { color: #edf2fa; }
+.project-text-only .featured-copy { width: 100%; }
+.project-text-only .featured-copy p {
+  max-width: 42em;
+  display: block;
+  font-size: 14px;
 }

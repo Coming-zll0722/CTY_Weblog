@@ -9,6 +9,9 @@ import tempfile
 import time
 from pathlib import Path
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -130,6 +133,19 @@ def main() -> None:
             }
         )
         run([sys.executable, "-m", "alembic", "upgrade", "head"], environment=environment)
+        query_tests = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests/test_post_queries.py", "-q"],
+            cwd=BACKEND_ROOT,
+            env=environment | {"TEST_POSTGRES_URL": environment["DATABASE_URL"]},
+            capture_output=True,
+            text=True,
+            check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+        print(query_tests.stdout, flush=True)
+        if query_tests.returncode:
+            print(query_tests.stderr, flush=True)
+            query_tests.check_returncode()
         version = run(
             [
                 str(binary_root / executable("psql")),
@@ -150,7 +166,8 @@ def main() -> None:
                 ),
             ]
         )
-        if version != "20260728_04":
+        expected_head = ScriptDirectory.from_config(Config("alembic.ini")).get_current_head()
+        if version != expected_head:
             raise RuntimeError(f"unexpected migration version: {version!r}")
 
         backup_file = temporary / "engineering-notes.dump"

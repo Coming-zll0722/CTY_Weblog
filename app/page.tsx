@@ -1,5 +1,4 @@
 import {
-  CurrentStatus,
   HeroCard,
   RecentArticles,
 } from "@/components/home/CoreCards";
@@ -10,7 +9,6 @@ import {
   Goals,
   TechStack,
 } from "@/components/home/ProfileCards";
-import { LearningOverview } from "@/components/home/LearningOverview";
 import { getPosts, getProject, getProjects, getTimeline } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +26,6 @@ export default async function Home() {
     <div className="home-bento">
       <HeroCard articles={posts.meta.total} projects={projects.meta.total} />
       <RecentArticles articles={posts.data} />
-      <CurrentStatus />
       <FeaturedProject project={featured} />
       <TechStack />
       <Goals />
@@ -37,7 +34,6 @@ export default async function Home() {
         projects={projects.data}
         timeline={timeline}
       />
-      <LearningOverview />
       <AboutCard />
     </div>
   );

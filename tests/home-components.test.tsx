@@ -13,7 +13,7 @@ test("hero keeps API totals and never substitutes mock GitHub counts", () => {
   render(<HeroCard articles={17} projects={2} />);
   expect(screen.getByText("17")).toBeInTheDocument();
   expect(screen.getByText("2")).toBeInTheDocument();
-  expect(screen.getByText("GitHub 提交 · 待接入")).toBeInTheDocument();
+  expect(screen.queryByText(/GitHub 提交/)).not.toBeInTheDocument();
   expect(screen.queryByText("500+")).not.toBeInTheDocument();
 });
 
@@ -97,7 +97,8 @@ test("featured project uses the actual record and exposes no invented repository
   expect(
     screen.queryByRole("link", { name: "GitHub" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByText("概念界面 · 非实际截图")).toBeInTheDocument();
+  expect(screen.queryByText(/100%|Stars 未接入|Forks 未接入|概念界面/)).not.toBeInTheDocument();
+  expect(screen.getByText("实际项目说明")).toBeInTheDocument();
   rerender(
     <FeaturedProject
       project={{ ...project, repo_url: "https://github.com/example/project" }}
