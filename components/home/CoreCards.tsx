@@ -43,13 +43,6 @@ export function HeroCard({
   const stats = [
     { value: articles, label: "技术文章" },
     { value: projects, label: "公开项目" },
-    {
-      value: homeProfile.githubContributions ?? "—",
-      label:
-        homeProfile.githubContributions === null
-          ? "GitHub 提交 · 待接入"
-          : "GitHub 提交",
-    },
     { value: homeProfile.startedYear, label: "开始记录" },
   ];
   return (
@@ -68,7 +61,7 @@ export function HeroCard({
       </div>
       <h1 id="home-title">{homeProfile.brand}</h1>
       <p className="hero-slogan">{homeProfile.slogan}</p>
-      <p className="hero-english">{homeProfile.englishSlogan}</p>
+      <p className="hero-introduction">分享通信测试、工具开发与工程实践，记录问题如何被分析、验证和解决。</p>
       <div className="hero-actions">
         <Link className="home-button primary" href="/articles">
           阅读最新文章 <Icon name="arrow" size={16} />

@@ -47,6 +47,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql+asyncpg://engineering_notes_ci:ci-only-password@127.0.0.1:5432/engineering_notes_ci
+      TEST_POSTGRES_URL: postgresql+asyncpg://engineering_notes_ci:ci-only-password@127.0.0.1:5432/engineering_notes_ci
       SECRET_KEY: ci-only-secret-key-with-at-least-32-bytes
       API_BASE_URL: http://127.0.0.1:8765/api/v1
     steps:

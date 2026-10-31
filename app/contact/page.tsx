@@ -26,7 +26,9 @@ export default async function ContactPage() {
         <p>
           {settings.contactEmail
             ? "邮件中请简要说明主题、背景与希望讨论的问题。"
-            : "联系邮箱正在配置，也可以先通过下方公开入口继续关注。"}
+            : settings.githubUrl || publicLinks.length
+              ? "可以通过下方公开主页继续了解本站，也可以订阅 RSS 获取新文章。"
+              : "目前提供 RSS 订阅，可在阅读器中关注本站的新文章。"}
         </p>
         <div className="hero-actions contact-actions">
           {settings.contactEmail ? (

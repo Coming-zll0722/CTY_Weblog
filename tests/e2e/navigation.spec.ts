@@ -9,7 +9,7 @@ test("compact desktop keeps navigation and all content visible", async ({ page }
     else await expect(sidebar).toBeHidden();
     await expect(page.locator(".hero-eyebrow span").last()).toBeVisible();
     for (const status of await page.locator(".goal-status").all()) await expect(status).toBeVisible();
-    await expect(page.locator(".home-bento > section")).toHaveCount(9);
+    await expect(page.locator(".home-bento > section")).toHaveCount(7);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

@@ -5,71 +5,6 @@ import { Icon } from "@/components/ui/Icon";
 import { SectionHeader } from "./CoreCards";
 import { formatProjectPeriod, type Project } from "@/lib/api";
 
-function ProjectPreview() {
-  return (
-    <div
-      className="engineering-preview"
-      aria-label="工程测试界面示意，非项目实际截图"
-      role="img"
-    >
-      <div className="preview-toolbar">
-        <span className="preview-mark">◈</span>
-        <b>INTERFACE LAB</b>
-        <span className="preview-live">SANDBOX</span>
-      </div>
-      <div className="preview-workspace">
-        <div className="preview-nav">
-          <span>◈</span>
-          <span>▤</span>
-          <span>◷</span>
-          <span>⚙</span>
-        </div>
-        <div className="preview-content">
-          <div className="preview-heading">
-            <b>Protocol workspace</b>
-            <span>SIMULATION</span>
-          </div>
-          <div className="preview-metrics">
-            <span>
-              Channels<b>04</b>
-            </span>
-            <span>
-              Frames<b>128</b>
-            </span>
-            <span>
-              Passed<b>100%</b>
-            </span>
-          </div>
-          <div className="preview-table">
-            <div>
-              <span>CHANNEL</span>
-              <span>PROTOCOL</span>
-              <span>STATUS</span>
-            </div>
-            {["TCP", "UDP", "CAN", "ARINC429"].map((protocol, i) => (
-              <div key={protocol}>
-                <span>CH_0{i + 1}</span>
-                <span>{protocol}</span>
-                <span className="preview-pass">● Ready</span>
-              </div>
-            ))}
-          </div>
-          <div className="preview-wave">
-            <svg viewBox="0 0 240 30" preserveAspectRatio="none">
-              <path
-                d="M0 20h15V7h22v14h15V7h27v14h17V7h24v14h17V7h27v14h14V7h26v14h16V7h20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.2"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 type FeaturedProjectData = Pick<
   Project,
   | "title"
@@ -90,11 +25,11 @@ export function FeaturedProject({
 }) {
   return (
     <section className="bento-card home-project" aria-label="精选项目">
-      <SectionHeader title="Featured Project" href="/projects" />
+      <SectionHeader title="精选项目" href="/projects" />
       {project ? (
         <>
           <div
-            className={`featured-visual${project.cover ? " has-project-cover" : ""}`}
+            className={`featured-visual${project.cover ? " has-project-cover" : " project-text-only"}`}
           >
             {project.cover && (
               <img
@@ -120,10 +55,6 @@ export function FeaturedProject({
                 ))}
               </div>
             </div>
-            {!project.cover && <ProjectPreview />}
-            {!project.cover && (
-              <span className="preview-disclaimer">概念界面 · 非实际截图</span>
-            )}
           </div>
           <div className="featured-footer">
             <div className="project-actions">
@@ -151,16 +82,6 @@ export function FeaturedProject({
               )}
             </div>
             <div className="project-facts">
-              <span>
-                <Icon name="star" size={15} />
-                <b>—</b>
-                <small>Stars 未接入</small>
-              </span>
-              <span>
-                <Icon name="branch" size={15} />
-                <b>—</b>
-                <small>Forks 未接入</small>
-              </span>
               <span>
                 <b>{project.status}</b>
                 <small>

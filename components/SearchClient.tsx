@@ -24,23 +24,31 @@ export function SearchClient({
   initialPage?: number;
 }) {
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [category, setCategory] = useState(initialCategory);
   const [page, setPage] = useState(initialPage);
-  const [total, setTotal] = useState(0);
+  const normalizedQuery = query.trim();
+  const requestKey = JSON.stringify([normalizedQuery, category, page]);
+  const [responseState, setResponseState] = useState<{
+    key: string;
+    status: "success" | "error";
+    items: SearchResult[];
+    suggestions: string[];
+    total: number;
+  } | null>(null);
+  const current = responseState?.key === requestKey ? responseState : null;
+  const loading = Boolean(normalizedQuery) && current === null;
+  const failed = current?.status === "error";
+  const results = current?.items ?? [];
+  const suggestions = current?.suggestions ?? [];
+  const total = current?.total ?? 0;
 
   useEffect(() => {
-    const normalized = query.trim();
+    const normalized = normalizedQuery;
     if (!normalized) {
       return;
     }
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
-      setLoading(true);
-      setFailed(false);
       try {
         const response = await fetch(
           `${publicApiBase}/search?q=${encodeURIComponent(normalized)}&page=${page}&page_size=10${category ? `&category=${encodeURIComponent(category)}` : ""}`,
@@ -51,20 +59,23 @@ export function SearchClient({
           data?: { items: SearchResult[]; suggestions?: string[]; total?: number };
         };
         if (!body.data) throw new Error("invalid search response");
-        setResults(body.data.items);
-        setSuggestions(body.data.suggestions ?? []);
-        setTotal(body.data.total ?? 0);
+        if (!controller.signal.aborted) {
+          setResponseState({
+            key: requestKey, status: "success", items: body.data.items,
+            suggestions: body.data.suggestions ?? [], total: body.data.total ?? 0,
+          });
+        }
       } catch (error) {
-        if ((error as Error).name !== "AbortError") setFailed(true);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted && (error as Error).name !== "AbortError") {
+          setResponseState({ key: requestKey, status: "error", items: [], suggestions: [], total: 0 });
+        }
       }
     }, 250);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [category, page, query]);
+  }, [category, page, normalizedQuery, requestKey]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -113,7 +124,7 @@ export function SearchClient({
           </select>
         </label>
       ) : null}
-      {!query ? (
+      {!normalizedQuery ? (
         <div className="search-empty">
           <p>可以试试</p>
           <div className="tag-row">

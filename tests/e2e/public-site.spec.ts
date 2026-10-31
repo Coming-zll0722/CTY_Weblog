@@ -32,7 +32,7 @@ test("home adapts across breakpoints without overflow or browser errors", async 
   page.on("console", (message) => { if (message.type() === "error") errors.push(`${message.text()} ${message.location().url}`); });
   await page.goto("/");
   await expect(page.locator(".home-project")).toBeVisible();
-  await expect(page.locator(".home-status")).toBeVisible();
+  await expect(page.locator(".home-status")).toHaveCount(0);
   for (const width of [320, 375, 390, 768, 1024, 1279, 1280, 1440, 1536, 1920]) {
     await page.setViewportSize({ width, height: 1024 });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), { message: `${width}px overflow` }).toBe(true);
@@ -44,10 +44,10 @@ test("mobile navigation restores focus and keeps the same content order", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.locator(".home-project")).toBeVisible();
-  await expect(page.locator(".home-status")).toBeVisible();
+  await expect(page.locator(".home-status")).toHaveCount(0);
   const project = await page.locator(".home-project").boundingBox();
-  const status = await page.locator(".home-status").boundingBox();
-  expect(status!.y).toBeLessThan(project!.y);
+  const recent = await page.locator(".home-recent").boundingBox();
+  expect(recent!.y).toBeLessThan(project!.y);
   const trigger = page.getByRole("button", { name: "打开导航菜单" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "导航菜单" });
@@ -64,16 +64,15 @@ test("mobile navigation restores focus and keeps the same content order", async 
   await expect(page.getByRole("heading", { level: 1, name: "资源" })).toBeVisible();
 });
 
-test("home theme persists and chart periods work without claiming live data", async ({ page }) => {
+test("home theme persists without placeholder metrics", async ({ page }) => {
   await page.goto("/");
   const theme = page.getByRole("button", { name: "切换深浅色模式" });
   await theme.click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: "本月", exact: true }).click();
-  await expect(page.getByText("112h", { exact: true })).toBeVisible();
-  await expect(page.getByText("计划示例", { exact: true })).toHaveCount(2);
+  await expect(page.getByText("计划示例", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/未接入|待接入|Passed/)).toHaveCount(0);
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.filter((v) => ["serious", "critical"].includes(v.impact ?? ""))).toEqual([]);
 });

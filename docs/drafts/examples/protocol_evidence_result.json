@@ -1,0 +1,62 @@
+{
+  "scope": "synthetic local TCP lesson; not production or hardware validation",
+  "partition_checks": 12,
+  "oversized_frame_rejected": true,
+  "cases": [
+    {
+      "case": "normal",
+      "transport": "TCP loopback",
+      "status": "complete",
+      "frames_hex": [
+        "504f4e47",
+        "41434b"
+      ],
+      "remaining_hex": "",
+      "observations": [
+        {
+          "observation": 1,
+          "raw_hex": "00",
+          "decoded_hex": []
+        },
+        {
+          "observation": 2,
+          "raw_hex": "04504f",
+          "decoded_hex": []
+        },
+        {
+          "observation": 3,
+          "raw_hex": "4e47000341434b",
+          "decoded_hex": [
+            "504f4e47",
+            "41434b"
+          ]
+        }
+      ],
+      "expectation_met": true
+    },
+    {
+      "case": "truncated",
+      "transport": "TCP loopback",
+      "status": "truncated",
+      "frames_hex": [],
+      "remaining_hex": "0004504f4e",
+      "observations": [
+        {
+          "observation": 1,
+          "raw_hex": "0004504f4e",
+          "decoded_hex": []
+        }
+      ],
+      "expectation_met": true
+    },
+    {
+      "case": "silent",
+      "transport": "TCP loopback",
+      "status": "timeout",
+      "frames_hex": [],
+      "remaining_hex": "",
+      "observations": [],
+      "expectation_met": true
+    }
+  ]
+}
