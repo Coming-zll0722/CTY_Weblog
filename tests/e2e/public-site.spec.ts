@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test("visitor can move from the dashboard home to a complete article", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("从头越");
-  await page.getByRole("link", { name: "阅读最新文章" }).click();
+  await page.getByRole("region", { name: "近期文章" }).getByRole("link", { name: "查看全部" }).click();
   await expect(page).toHaveURL(/\/articles$/);
   const firstArticle = page.locator(".archive-list .article-row h2 a").first();
   const firstTitle = await firstArticle.innerText();
@@ -80,8 +80,8 @@ test("home theme persists without placeholder metrics", async ({ page }) => {
 test("top search reaches the existing search page with its query", async ({ page }) => {
   await page.setViewportSize({ width: 1536, height: 1024 });
   await page.goto("/");
-  await page.getByRole("textbox", { name: "搜索文章、项目或内容" }).fill("测试");
-  await page.getByRole("button", { name: "提交搜索" }).click();
-  await expect(page).toHaveURL(/\/search\?q=/);
-  await expect(page.getByRole("textbox", { name: "搜索文章和项目" })).toHaveValue("测试");
+  await page.getByRole("navigation", { name: "顶部导航" }).getByRole("link", { name: "搜索" }).click();
+  await expect(page).toHaveURL(/\/search$/);
+  await page.getByRole("textbox", { name: "搜索文章和项目" }).fill("跨栈");
+  await expect(page.locator(".search-results")).toContainText("跨栈集成文章");
 });

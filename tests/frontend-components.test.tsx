@@ -89,9 +89,7 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(localStorage.getItem("theme")).toBe("dark");
   const header = container.querySelector(".personal-topbar");
   expect(header).not.toBeNull();
-  const search = within(header as HTMLElement).getByRole("search");
-  expect(search).toHaveAttribute("action", "/search");
-  expect(within(search).getByRole("textbox")).toHaveAttribute("name", "q");
+  expect(within(header as HTMLElement).getAllByRole("link", { name: "搜索" })[0]).toHaveAttribute("href", "/search");
   expect(screen.getByRole("link", { name: "管理员入口" })).toHaveAttribute("href", "/admin");
   expect(screen.getByText(/© .*从头越.*从头越.blog/)).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: /RSS/ })).not.toBeInTheDocument();
@@ -117,16 +115,16 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(menu).toHaveFocus();
 });
 
-test("site uses one complete grouped navigation and keeps the header for tools", () => {
+test("primary navigation and secondary destinations remain accessible", () => {
   render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
-  expect(within(screen.getByRole("banner")).queryByRole("navigation")).not.toBeInTheDocument();
-  const sidebar = screen.getByRole("navigation", { name: "侧栏导航" });
-  const labels = ["首页", "文章", "项目", "笔记", "资源", "技术栈", "时间轴", "关于我"];
-  expect(within(sidebar).getAllByRole("link").map((link) => link.textContent)).toEqual(labels);
-  expect(within(sidebar).getByRole("link", { name: "技术栈" })).toHaveAttribute("href", "/stack");
-  fireEvent.click(screen.getByRole("button", { name: "打开导航菜单" }));
+  const top = screen.getByRole("navigation", { name: "顶部导航" });
+  expect(within(top).getAllByRole("link").map((link) => link.getAttribute("href")))
+    .toEqual(["/", "/articles", "/projects", "/about", "/search"]);
+  const more = screen.getByRole("navigation", { name: "更多内容" });
+  expect(within(more).getByRole("link", { name: "技术栈" })).toHaveAttribute("href", "/stack");
+  fireEvent.click(screen.getByRole("button", { name: "显示设置" }));
   const mobile = screen.getByRole("navigation", { name: "移动导航" });
-  expect(within(mobile).getAllByRole("link").map((link) => link.textContent)).toEqual([...labels, "联系"]);
+  expect(within(mobile).getAllByRole("link").map((link) => link.textContent)).toEqual(["首页", "文章", "项目", "笔记", "资源", "技术栈", "时间轴", "关于我", "联系"]);
 });
 
 test("footer exposes the ICP registration through the MIIT lookup", () => {
