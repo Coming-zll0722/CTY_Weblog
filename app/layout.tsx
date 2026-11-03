@@ -5,6 +5,7 @@ import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { getPublicSettingsOrDefaults } from "@/lib/api";
 import { getSiteOrigin } from "@/lib/site-origin";
 import "./globals.css";
+import "./minimal.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const [incoming, settings] = await Promise.all([headers(), getPublicSettingsOrDefaults()]);

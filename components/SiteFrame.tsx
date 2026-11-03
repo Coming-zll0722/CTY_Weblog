@@ -8,7 +8,6 @@ import type { PublicSettings } from "@/lib/api";
 import type { LayoutMode } from "@/components/layout/LayoutChoice";
 import {
   MobileNavigation,
-  Sidebar,
   TopNavigation,
 } from "@/components/layout/Navigation";
 
@@ -59,7 +58,8 @@ export function SiteFrame({
 
   useEffect(() => {
     if (!menuOpen) return;
-    const trigger = menuButtonRef.current;
+    const trigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement : menuButtonRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     navRef.current?.querySelector<HTMLElement>("button, a")?.focus();
@@ -122,17 +122,23 @@ export function SiteFrame({
     <div className="site-layout">
     <div className="personal-site">
       <TopNavigation
-        theme={theme}
-        toggleTheme={toggleTheme}
         menuOpen={menuOpen}
         toggleMenu={() => setMenuOpen(!menuOpen)}
         buttonRef={menuButtonRef}
       />
       <div className="personal-body">
-        <Sidebar layout={layout} onLayoutChange={changeLayout} />
         <div className="personal-main">
           <main id="main-content">{children}</main>
           <footer className="personal-footer">
+            <nav className="footer-explore" aria-label="更多内容">
+              <Link href="/notes">笔记</Link>
+              <Link href="/resources">资源</Link>
+              <Link href="/stack">技术栈</Link>
+              <Link href="/timeline">时间轴</Link>
+              <button type="button" onClick={() => setMenuOpen(true)} aria-haspopup="dialog">显示设置</button>
+              <button type="button" onClick={toggleTheme} aria-label="切换深浅色模式" aria-pressed={theme === "dark"}>外观：{theme === "dark" ? "深色" : "浅色"}</button>
+              <Link href="/admin" aria-label="管理员入口">管理</Link>
+            </nav>
             <div>
               <span>
                 © {new Date().getFullYear()} {settings.authorName} ·{" "}

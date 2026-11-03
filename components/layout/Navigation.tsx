@@ -11,13 +11,15 @@ import { LayoutChoice, type LayoutMode } from "./LayoutChoice";
 function NavigationLinks({
   group,
   onNavigate,
+  showIcons = true,
 }: {
-  group: "home" | "content" | "personal";
+  group: "home" | "content" | "personal" | "all" | "primary";
   onNavigate?: () => void;
+  showIcons?: boolean;
 }) {
   const pathname = usePathname();
   return navigation
-    .filter((item) => item.group === group)
+    .filter((item) => group === "primary" ? ["/", "/articles", "/projects", "/about"].includes(item.href) : group === "all" || item.group === group)
     .map((item) => {
       const active =
         item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -29,8 +31,8 @@ function NavigationLinks({
           aria-current={active ? "page" : undefined}
           onClick={onNavigate}
         >
-          <span className="rail-icon"><Icon name={item.icon} /></span>
-          <span>{item.label}</span>
+          {showIcons && <span className="rail-icon"><Icon name={item.icon} /></span>}
+          <span>{group === "primary" && item.href === "/about" ? "关于" : item.label}</span>
         </Link>
       );
     });
@@ -53,14 +55,10 @@ function NavigationGroups({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function TopNavigation({
-  theme,
-  toggleTheme,
   menuOpen,
   toggleMenu,
   buttonRef,
 }: {
-  theme: "light" | "dark";
-  toggleTheme: () => void;
   menuOpen: boolean;
   toggleMenu: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
@@ -68,52 +66,15 @@ export function TopNavigation({
   return (
     <header className="personal-topbar">
       <Link href="/" className="personal-brand" aria-label="从头越首页">
-        <BrandMark />
-        <span>
-          <strong>{homeProfile.brand}</strong>
-          <small>{homeProfile.domain}</small>
-        </span>
+        <strong>{homeProfile.brand}</strong>
       </Link>
+      <nav className="top-links" aria-label="顶部导航">
+        <NavigationLinks group="primary" showIcons={false} />
+        <Link className="nav-search" href="/search" aria-label="搜索"><Icon name="search" size={20} /></Link>
+      </nav>
       <div className="top-tools">
-        <form action="/search" role="search" className="top-search">
-          <Icon name="search" size={17} />
-          <input
-            name="q"
-            maxLength={100}
-            placeholder="搜索文章、项目或内容..."
-            aria-label="搜索文章、项目或内容"
-          />
-          <button type="submit" aria-label="提交搜索">
-            <Icon name="arrow" size={15} />
-          </button>
-        </form>
-        <Link
-          className="tool-button compact-search"
-          href="/search"
-          aria-label="搜索"
-        >
+        <Link className="tool-button compact-search" href="/search" aria-label="搜索">
           <Icon name="search" />
-        </Link>
-        <button
-          className="theme-switch"
-          onClick={toggleTheme}
-          aria-label="切换深浅色模式"
-          aria-pressed={theme === "dark"}
-        >
-          <span className={theme === "light" ? "selected" : ""}>
-            <Icon name="sun" size={18} />
-          </span>
-          <span className={theme === "dark" ? "selected" : ""}>
-            <Icon name="moon" size={18} />
-          </span>
-        </button>
-        <Link
-          className="tool-button admin-tool"
-          href="/admin"
-          aria-label="管理员入口"
-          title="管理入口"
-        >
-          <Icon name="code" />
         </Link>
         <button
           ref={buttonRef}

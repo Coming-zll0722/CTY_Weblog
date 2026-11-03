@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { goals, homeProfile } from "@/data/home";
 import { getPublicSettingsOrDefaults } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -40,6 +41,11 @@ export default async function AboutPage() {
             我的技术背景连接了嵌入式通信、软件测试与工具开发。处理通信问题时，单看最终数据通常不够：
             连接状态、消息边界、时序、重复与丢失、异常恢复，以及证据是否可追溯，都会影响结论。
           </p>
+          <dl className="minimal-profile-facts">
+            <div><dt>所在地</dt><dd>{homeProfile.location}</dd></div>
+            <div><dt>出生年份</dt><dd>{homeProfile.birthYear}</dd></div>
+            <div><dt>开始记录</dt><dd>{homeProfile.startedYear}</dd></div>
+          </dl>
         </section>
         <section id="method">
           <h2>方法</h2>
@@ -64,6 +70,10 @@ export default async function AboutPage() {
           </p>
         </section>
       </div>
+      <section className="minimal-goals" aria-labelledby="goals-title">
+        <h2 id="goals-title">长期目标</h2>
+        <ul>{goals.map((goal) => <li key={goal.title}><h3>{goal.title}</h3><p>{goal.description}</p></li>)}</ul>
+      </section>
       <section className="follow-up">
         <div>
           <h2>继续阅读</h2>
