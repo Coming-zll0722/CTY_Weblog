@@ -67,6 +67,7 @@ export function TopNavigation({
     <header className="personal-topbar">
       <Link href="/" className="personal-brand" aria-label="从头越首页">
         <strong>{homeProfile.brand}</strong>
+        <small className="top-brand-domain">{homeProfile.domain}</small>
       </Link>
       <nav className="top-links" aria-label="顶部导航">
         <NavigationLinks group="primary" showIcons={false} />
