@@ -20,6 +20,12 @@ test("home keeps real titles, dates and destinations and limits the selection", 
   expect(within(selected).getAllByRole("article")).toHaveLength(2);
   expect(within(selected).getByRole("link", { name: "真实项目 0" })).toHaveAttribute("href", "/projects/project-0");
   expect(within(selected).getAllByText("Python · TCP")).toHaveLength(2);
+  expect(screen.getByRole("link", { name: "阅读文章" })).toHaveAttribute("href", "/articles");
+  const about = screen.getByRole("region", { name: "关于我" });
+  expect(within(about).getByRole("link", { name: "更多关于我" })).toHaveAttribute("href", "/about");
+  expect(about.closest(".minimal-intro")).toContainElement(screen.getByRole("heading", { name: "从头越" }));
+  const focus = screen.getByRole("region", { name: "最近在做" });
+  expect(selected.compareDocumentPosition(focus) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(container.querySelector("img")).toBeNull();
   expect(screen.queryByText(/计划示例|未接入|Passed/)).not.toBeInTheDocument();
 });

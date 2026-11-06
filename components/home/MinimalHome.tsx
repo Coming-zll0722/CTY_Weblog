@@ -27,6 +27,33 @@ export function ArticleSummary({ article }: { article: PostListItem }) {
   );
 }
 
+function ProjectIllustration({ slug }: { slug: string }) {
+  if (slug === "protocol-test-platform") {
+    return (
+      <svg className="minimal-project-art" viewBox="0 0 144 80" aria-hidden="true">
+        <path className="minimal-art-edge" d="m16 19 4-3 35 10v43l-4 3V29zM94 7l4-3 35 10v43l-4 3V17z" />
+        <path className="minimal-art-panel" d="M16 19 51 29v43L16 62zM94 7l35 10v43L94 50z" />
+        <path className="minimal-art-signal" d="m51 49 43-14" />
+        <circle className="minimal-art-node" cx="51" cy="49" r="3" />
+        <circle className="minimal-art-node" cx="94" cy="35" r="3" />
+      </svg>
+    );
+  }
+  if (slug === "cty-log-technical-archive") {
+    return (
+      <svg className="minimal-project-art" viewBox="0 0 144 80" aria-hidden="true">
+        {[[72, 0], [36, 6], [0, 12]].map(([x, y]) => (
+          <g key={x} transform={`translate(${x} ${y})`}>
+            <path className="minimal-art-panel" d="M15 5l44 14v48L15 53z" />
+            <path className="minimal-art-detail" d="m24 22 26 8m-26 1 26 8m-26 1 18 6" />
+          </g>
+        ))}
+      </svg>
+    );
+  }
+  return <Icon name="project" size={44} />;
+}
+
 export function ProjectSummary({ project }: { project: ProjectListItem }) {
   return (
     <article className="minimal-project">
@@ -38,7 +65,7 @@ export function ProjectSummary({ project }: { project: ProjectListItem }) {
       <p>{project.summary}</p>
       <div className="minimal-project-bottom">
         <span className="minimal-project-tags">{project.tags.join(" · ")}</span>
-        <span className="minimal-project-symbol" aria-hidden="true"><Icon name="project" size={44} /></span>
+        <span className="minimal-project-symbol" aria-hidden="true"><ProjectIllustration slug={project.slug} /></span>
       </div>
     </article>
   );
@@ -53,15 +80,17 @@ export function MinimalHome({ articles, projects, settings }: {
     <div className="minimal-home">
       <div className="minimal-intro">
         <section className="minimal-hero" aria-labelledby="home-title">
-          <p className="minimal-eyebrow">{homeProfile.domain}</p>
+          <p className="minimal-eyebrow">个人技术记录</p>
           <h1 id="home-title">{homeProfile.brand}</h1>
-          <p className="minimal-lead">{settings.siteDescription}</p>
-          <p className="minimal-description">{homeProfile.description}</p>
-          <Link className="minimal-about-link" href="/about">了解我 <Icon name="arrow" size={17} /></Link>
+          <p className="minimal-lead">{homeProfile.slogan}</p>
+          <p className="minimal-description">{settings.siteDescription}</p>
+          <Link className="minimal-intro-link" href="/articles">阅读文章 <Icon name="arrow" size={17} /></Link>
         </section>
-        <section className="minimal-focus" aria-labelledby="focus-title">
-          <h2 id="focus-title">最近在做</h2>
-          <ul>{currentFocus.map((item) => <li key={item.no} title={item.description}>{item.title}</li>)}</ul>
+        <section className="minimal-about" aria-labelledby="home-about-title">
+          <h2 id="home-about-title">关于我</h2>
+          <p>电子信息工程专业毕业，目前从事嵌入式软件测试。</p>
+          <p>关注通信协议、测试自动化与软件工具。</p>
+          <Link className="minimal-intro-link" href="/about">更多关于我 <Icon name="arrow" size={16} /></Link>
         </section>
       </div>
       <div className="minimal-columns">
@@ -80,12 +109,9 @@ export function MinimalHome({ articles, projects, settings }: {
           </div>
         </section>
       </div>
-      <section className="minimal-personal" aria-label="关于我">
-        <div>
-          <h2>记录技术，记录思考，记录成长的过程。</h2>
-          <p>关注嵌入式通信、测试自动化与软件工具。</p>
-        </div>
-        <Link href="/about">更多关于我 <Icon name="arrow" size={16} /></Link>
+      <section className="minimal-focus" aria-labelledby="home-focus-title">
+        <h2 id="home-focus-title">最近在做</h2>
+        <ul>{currentFocus.slice(0, 3).map((item) => <li key={item.no} title={item.description}>{item.title}</li>)}</ul>
       </section>
     </div>
   );
