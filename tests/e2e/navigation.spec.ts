@@ -9,7 +9,7 @@ test("compact desktop keeps navigation and all content visible", async ({ page }
     else await expect(top).toBeHidden();
     await expect(page.locator(".minimal-eyebrow")).toBeVisible();
     await expect(page.getByRole("region", { name: "最近在做" })).toBeVisible();
-    await expect(page.locator(".minimal-columns > section")).toHaveCount(2);
+    await expect(page.locator(".minimal-columns > section")).toHaveCount(4);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

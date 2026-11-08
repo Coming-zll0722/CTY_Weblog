@@ -1,3 +1,15 @@
+const skillNames = {
+  python: "Python",
+  cpp: "C / C++",
+  tcpUdp: "TCP / UDP",
+  react: "React / TypeScript",
+  fastApi: "FastAPI",
+  postgres: "PostgreSQL",
+  verilog: "Verilog",
+  vivado: "Vivado",
+  timingAnalysis: "时序分析",
+};
+
 export const skillGroups = [
   {
     no: "01",
@@ -5,8 +17,8 @@ export const skillGroups = [
     description: "把协议、用例、证据与报告拆成稳定边界，让重复验证可以被复用和追踪。",
     scenario: "协议测试平台、数据构造、报告生成、回归执行",
     skills: [
-      { name: "Python", level: "熟练使用" },
-      { name: "C / C++", level: "工作使用" },
+      { name: skillNames.python, level: "熟练使用" },
+      { name: skillNames.cpp, level: "工作使用" },
       { name: "SQL", level: "项目经验" },
       { name: "pytest", level: "项目经验" },
     ],
@@ -19,7 +31,7 @@ export const skillGroups = [
     description: "围绕连接、帧格式、时序、异常与可追溯性设计验证路径。",
     scenario: "TCP / UDP、串口、CAN、RS422 / RS485、1553B、ARINC 429",
     skills: [
-      { name: "TCP / UDP", level: "熟练使用" },
+      { name: skillNames.tcpUdp, level: "熟练使用" },
       { name: "串口与 CAN", level: "项目经验" },
       { name: "总线协议验证", level: "项目经验" },
     ],
@@ -45,9 +57,9 @@ export const skillGroups = [
     description: "维护从内容模型、接口、安全控制到容器发布和回滚的完整链路。",
     scenario: "内容系统、管理后台、数据库迁移、单机容器化部署",
     skills: [
-      { name: "React / TypeScript", level: "项目经验" },
-      { name: "FastAPI", level: "项目经验" },
-      { name: "PostgreSQL", level: "项目经验" },
+      { name: skillNames.react, level: "项目经验" },
+      { name: skillNames.fastApi, level: "项目经验" },
+      { name: skillNames.postgres, level: "项目经验" },
       { name: "Docker / Nginx", level: "项目经验" },
     ],
     boundary: "当前以单实例为前提；扩容前需迁移限流状态与媒体存储。",
@@ -59,14 +71,39 @@ export const skillGroups = [
     description: "从组合逻辑、时序逻辑逐步走向约束、仿真、CDC 与时序报告。",
     scenario: "Verilog 学习实验、时钟约束、接口时序、可复现实验记录",
     skills: [
-      { name: "Verilog", level: "正在学习" },
-      { name: "Vivado", level: "正在学习" },
-      { name: "时序分析", level: "正在学习" },
+      { name: skillNames.verilog, level: "正在学习" },
+      { name: skillNames.vivado, level: "正在学习" },
+      { name: skillNames.timingAnalysis, level: "正在学习" },
     ],
     boundary: "这是持续补全中的学习方向，不等同于成熟工程项目经验。",
     href: "/projects/fpga-timing-verification-lab",
   },
 ];
+
+export const homeSkillGroups = [
+  {
+    icon: "branch",
+    title: "嵌入式通信与测试",
+    experience: "工作实践",
+    skills: [skillNames.python, skillNames.cpp, skillNames.tcpUdp, "串口 / CAN"],
+    description: "用于协议验证、测试自动化与工具开发。",
+  },
+  {
+    icon: "code",
+    title: "Web 开发与部署",
+    experience: "项目经验",
+    skills: [skillNames.react, skillNames.fastApi, skillNames.postgres, "Docker"],
+    description: "用于开发个人站点和维护容器部署。",
+  },
+  {
+    icon: "chip",
+    title: "FPGA 与数字电路",
+    experience: "正在学习",
+    skills: [skillNames.verilog, skillNames.vivado, skillNames.timingAnalysis],
+    description: "通过小型实验练习仿真、时序约束与分析。",
+  },
+] as const;
+
 export const currentFocus = [
   {
     no: "A",
