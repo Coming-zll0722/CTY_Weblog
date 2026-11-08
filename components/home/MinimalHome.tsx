@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { homeProfile } from "@/data/home";
-import { currentFocus } from "@/data/profile";
+import { currentFocus, homeSkillGroups } from "@/data/profile";
 import { formatDate, type PostListItem, type ProjectListItem, type PublicSettings } from "@/lib/api";
 
-export function SectionHeading({ title, href }: { title: string; href: string }) {
+export function SectionHeading({ title, href, linkLabel = "查看全部" }: {
+  title: string;
+  href: string;
+  linkLabel?: string;
+}) {
   return (
     <div className="minimal-section-heading">
       <h2>{title}</h2>
-      <Link href={href}>查看全部 <Icon name="arrow" size={16} /></Link>
+      <Link href={href}>{linkLabel} <Icon name="arrow" size={16} /></Link>
     </div>
   );
 }
@@ -101,6 +105,26 @@ export function MinimalHome({ articles, projects, settings }: {
             {!articles.length && <p className="empty-state">文章正在整理，发布后会在这里显示。</p>}
           </div>
         </section>
+        <section className="minimal-stack" aria-label="技术栈">
+          <SectionHeading title="技术栈" href="/stack" linkLabel="能力地图" />
+          <ul className="minimal-detail-list">
+            {homeSkillGroups.map((group) => (
+              <li className="minimal-skill" key={group.title}>
+                <Icon name={group.icon} size={19} className="minimal-skill-icon" />
+                <div>
+                  <div className="minimal-skill-heading">
+                    <h3>{group.title}</h3>
+                    <span className="minimal-skill-experience">{group.experience}</span>
+                  </div>
+                  <div className="minimal-skill-tags">
+                    {group.skills.map((skill) => <span key={skill}>{skill}</span>)}
+                  </div>
+                  <p>{group.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
         <section className="home-project" aria-label="代表项目">
           <SectionHeading title="代表项目" href="/projects" />
           <div className="minimal-projects">
@@ -108,11 +132,18 @@ export function MinimalHome({ articles, projects, settings }: {
             {!projects.length && <p className="empty-state">项目正在整理，公开案例发布后会出现在这里。</p>}
           </div>
         </section>
+        <section className="minimal-focus" aria-labelledby="home-focus-title">
+          <div className="minimal-section-heading"><h2 id="home-focus-title">最近在做</h2></div>
+          <ul className="minimal-detail-list">
+            {currentFocus.slice(0, 3).map((item) => (
+              <li key={item.no}>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
-      <section className="minimal-focus" aria-labelledby="home-focus-title">
-        <h2 id="home-focus-title">最近在做</h2>
-        <ul>{currentFocus.slice(0, 3).map((item) => <li key={item.no} title={item.description}>{item.title}</li>)}</ul>
-      </section>
     </div>
   );
 }
