@@ -5,7 +5,7 @@ test("compact desktop keeps navigation and all content visible", async ({ page }
   for (const width of [320, 768, 980, 1023, 1024, 1100, 1280, 1536, 2560]) {
     await page.setViewportSize({ width, height: 800 });
     const top = page.getByRole("navigation", { name: "顶部导航" });
-    if (width >= 600) await expect(top).toBeVisible();
+    if (width >= 960) await expect(top).toBeVisible();
     else await expect(top).toBeHidden();
     await expect(page.locator(".minimal-eyebrow")).toBeVisible();
     await expect(page.getByRole("region", { name: "最近在做" })).toBeVisible();
@@ -20,7 +20,7 @@ test("touch browser can restore automatic layout after a saved desktop reload", 
   try {
     await page.goto(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8766");
     await expect(page.getByRole("heading", { level: 1, name: "从头越", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "打开导航菜单" }).click();
+    await page.getByRole("button", { name: "显示设置" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "桌面", exact: true }).click();
     await page.reload();
     await page.getByRole("button", { name: "恢复自动布局" }).tap();
@@ -35,7 +35,7 @@ test("manual desktop persists through navigation and reload and can return to au
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1, name: "从头越", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "打开导航菜单" }).click();
+  await page.getByRole("button", { name: "显示设置" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "桌面", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "顶部导航" })).toBeVisible();
@@ -65,13 +65,13 @@ test("primary and additional destinations work on a short screen", async ({ page
   await page.setViewportSize({ width: 1440, height: 650 });
   await page.goto("/");
   const top = page.getByRole("navigation", { name: "顶部导航" });
-  await expect(top.getByRole("link")).toHaveText(["首页", "文章", "项目", "关于", ""]);
+  await expect(top.getByRole("link")).toHaveText(["首页", "文章", "项目", "技术栈", "时间轴", "关于"]);
   await top.getByRole("link", { name: "文章" }).click();
   await expect(page).toHaveURL(/\/articles$/);
   await expect(top.getByRole("link", { name: "文章" })).toHaveAttribute("aria-current", "page");
   await top.getByRole("link", { name: "关于" }).click();
   await expect(page).toHaveURL(/\/about$/);
-  await page.getByRole("navigation", { name: "更多内容" }).getByRole("link", { name: "技术栈" }).click();
+  await top.getByRole("link", { name: "技术栈" }).click();
   await expect(page).toHaveURL(/\/stack$/);
 });
 
@@ -82,6 +82,7 @@ test("unframed top brand follows the saved theme and the browser tab keeps the i
   await expect(brand).toBeVisible();
   const lightColor = await brand.evaluate((element) => getComputedStyle(element).color);
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", /\/brand\/icon-light\.png$/);
+  await page.getByRole("button", { name: "显示设置" }).click();
   await page.getByRole("button", { name: "切换深浅色模式" }).click();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -94,8 +95,32 @@ test("mobile drawer includes the same sections and closes after navigation", asy
   await expect(page.getByRole("heading", { level: 1, name: "从头越", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "打开导航菜单" }).click();
   const drawer = page.getByRole("dialog", { name: "导航菜单" });
-  await expect(drawer.getByRole("link")).toHaveText(["首页", "文章", "项目", "笔记", "资源", "技术栈", "时间轴", "关于我", "联系", "管理入口"]);
+  await expect(drawer.getByRole("link")).toHaveText(["首页", "文章", "项目", "技术栈", "时间轴", "关于我", "联系"]);
   await drawer.getByRole("link", { name: "技术栈" }).click();
   await expect(page).toHaveURL(/\/stack$/);
   await expect(drawer).toHaveCount(0);
+});
+
+test("sticky header covers both edges and keeps settings next to search", async ({ page }) => {
+  for (const width of [320, 390, 768, 960, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 650 });
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo(0, 350));
+    const header = page.getByRole("banner");
+    const bounds = (await header.boundingBox())!;
+    expect(bounds.x).toBe(0);
+    expect(bounds.y).toBe(0);
+    expect(bounds.width).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+    const search = (await header.getByRole("link", { name: "搜索", exact: true }).boundingBox())!;
+    const settings = (await header.getByRole("button", { name: "显示设置", exact: true }).boundingBox())!;
+    const admin = (await header.getByRole("link", { name: "管理员入口" }).boundingBox())!;
+    expect(settings.x).toBeGreaterThanOrEqual(search.x + search.width);
+    expect(admin.x).toBeGreaterThanOrEqual(settings.x + settings.width);
+    await header.getByRole("button", { name: "显示设置", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "显示设置" });
+    await expect(dialog.getByRole("button", { name: "切换深浅色模式" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "自动", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(header.getByRole("button", { name: "显示设置", exact: true })).toBeFocused();
+  }
 });

@@ -19,7 +19,7 @@ function NavigationLinks({
 }) {
   const pathname = usePathname();
   return navigation
-    .filter((item) => group === "primary" ? ["/", "/articles", "/projects", "/about"].includes(item.href) : group === "all" || item.group === group)
+    .filter((item) => group === "primary" || group === "all" || item.group === group)
     .map((item) => {
       const active =
         item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -58,35 +58,55 @@ export function TopNavigation({
   menuOpen,
   toggleMenu,
   buttonRef,
+  settingsOpen,
+  onOpenSettings,
 }: {
   menuOpen: boolean;
   toggleMenu: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
+  settingsOpen: boolean;
+  onOpenSettings: () => void;
 }) {
   return (
     <header className="personal-topbar">
-      <Link href="/" className="personal-brand" aria-label="从头越首页">
-        <strong>{homeProfile.brand}</strong>
-        <small className="top-brand-domain">{homeProfile.domain}</small>
-      </Link>
-      <nav className="top-links" aria-label="顶部导航">
-        <NavigationLinks group="primary" showIcons={false} />
-        <Link className="nav-search" href="/search" aria-label="搜索"><Icon name="search" size={20} /></Link>
-      </nav>
-      <div className="top-tools">
-        <Link className="tool-button compact-search" href="/search" aria-label="搜索">
-          <Icon name="search" />
+      <div className="topbar-inner">
+        <Link href="/" className="personal-brand" aria-label="从头越首页">
+          <strong>{homeProfile.brand}</strong>
+          <small className="top-brand-domain">{homeProfile.domain}</small>
         </Link>
-        <button
-          ref={buttonRef}
-          className="tool-button mobile-menu-trigger"
-          onClick={toggleMenu}
-          aria-label={menuOpen ? "关闭导航菜单" : "打开导航菜单"}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-navigation"
-        >
-          <Icon name={menuOpen ? "close" : "menu"} />
-        </button>
+        <nav className="top-links" aria-label="顶部导航">
+          <NavigationLinks group="primary" showIcons={false} />
+        </nav>
+        <div className="top-tools">
+          <Link className="tool-button" href="/search" aria-label="搜索" title="搜索">
+            <Icon name="search" />
+          </Link>
+          <button
+            type="button"
+            className="tool-button"
+            onClick={onOpenSettings}
+            aria-label="显示设置"
+            title="显示设置"
+            aria-haspopup="dialog"
+            aria-expanded={settingsOpen}
+            aria-controls="display-settings"
+          >
+            <Icon name="settings" />
+          </button>
+          <Link className="tool-button" href="/admin" aria-label="管理员入口" title="管理">
+            <Icon name="user" />
+          </Link>
+          <button
+            ref={buttonRef}
+            className="tool-button mobile-menu-trigger"
+            onClick={toggleMenu}
+            aria-label={menuOpen ? "关闭导航菜单" : "打开导航菜单"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+          >
+            <Icon name={menuOpen ? "close" : "menu"} />
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -116,14 +136,10 @@ export function MobileNavigation({
   open,
   navRef,
   onClose,
-  layout,
-  onLayoutChange,
 }: {
   open: boolean;
   navRef: RefObject<HTMLDivElement | null>;
   onClose: () => void;
-  layout: LayoutMode;
-  onLayoutChange: (mode: LayoutMode) => void;
 }) {
   if (!open) return null;
   return (
@@ -161,9 +177,40 @@ export function MobileNavigation({
             联系
           </Link>
         </nav>
-        <Link className="drawer-admin" href="/admin" onClick={onClose}>管理入口</Link>
-        <LayoutChoice mode={layout} onChange={onLayoutChange} />
         <p className="drawer-slogan">{homeProfile.slogan}</p>
+      </div>
+    </div>
+  );
+}
+
+export function DisplaySettings({
+  open, panelRef, onClose, layout, onLayoutChange, theme, onToggleTheme,
+}: {
+  open: boolean;
+  panelRef: RefObject<HTMLDivElement | null>;
+  onClose: () => void;
+  layout: LayoutMode;
+  onLayoutChange: (mode: LayoutMode) => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="mobile-nav-layer display-settings-layer">
+      <button className="mobile-nav-backdrop" aria-label="关闭显示设置遮罩" tabIndex={-1} onClick={onClose} />
+      <div ref={panelRef} className="display-settings-panel" role="dialog" aria-modal="true" aria-label="显示设置" id="display-settings">
+        <div className="drawer-heading">
+          <h2>显示设置</h2>
+          <button className="tool-button" onClick={onClose} aria-label="关闭显示设置"><Icon name="close" /></button>
+        </div>
+        <div className="appearance-choice">
+          <span>外观颜色</span>
+          <button type="button" onClick={onToggleTheme} aria-label="切换深浅色模式" aria-pressed={theme === "dark"}>
+            <Icon name={theme === "dark" ? "moon" : "sun"} />
+            {theme === "dark" ? "深色" : "浅色"}
+          </button>
+        </div>
+        <LayoutChoice mode={layout} onChange={onLayoutChange} />
       </div>
     </div>
   );

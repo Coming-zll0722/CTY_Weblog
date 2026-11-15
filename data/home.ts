@@ -31,8 +31,6 @@ export const navigation: {
   { label: "首页", href: "/", icon: "home", group: "home" },
   { label: "文章", href: "/articles", icon: "article", group: "content" },
   { label: "项目", href: "/projects", icon: "project", group: "content" },
-  { label: "笔记", href: "/notes", icon: "note", group: "content" },
-  { label: "资源", href: "/resources", icon: "resource", group: "content" },
   { label: "技术栈", href: "/stack", icon: "chip", group: "personal" },
   { label: "时间轴", href: "/timeline", icon: "timeline", group: "personal" },
   { label: "关于我", href: "/about", icon: "user", group: "personal" },

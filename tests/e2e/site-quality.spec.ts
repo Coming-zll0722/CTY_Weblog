@@ -6,7 +6,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: theme });
       for (const [route, title] of [
-        ["/", "从头越"], ["/notes", "学习笔记"],
+        ["/", "从头越"], ["/stack", "能力地图"],
         ["/search?q=跨栈", "搜索"], ["/contact", "联系"],
       ]) {
         await page.goto(route);
@@ -20,9 +20,6 @@ for (const theme of ["light", "dark"] as const) {
         if (route === "/") {
           await expect(page.locator(".home-status, .home-learning")).toHaveCount(0);
           await page.screenshot({ path: testInfo.outputPath(`home-${width}-${theme}.png`), fullPage: true });
-        }
-        if (route === "/notes") {
-          await expect(page.getByRole("heading", { name: "笔记正在整理" })).toBeVisible();
         }
       }
     });

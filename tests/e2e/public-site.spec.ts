@@ -15,7 +15,7 @@ test("visitor can move from the dashboard home to a complete article", async ({ 
 });
 
 test("core public pages have no serious axe violations", async ({ page }) => {
-  for (const route of ["/", "/articles", "/projects", "/notes", "/resources", "/about", "/admin"]) {
+  for (const route of ["/", "/articles", "/projects", "/stack", "/timeline", "/about", "/admin"]) {
     await page.goto(route);
     await expect(page.locator("h1").first()).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
@@ -54,18 +54,19 @@ test("mobile navigation restores focus and keeps the same content order", async 
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "关闭导航" })).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  await expect(dialog.getByRole("button", { name: "桌面", exact: true })).toBeFocused();
+  await expect(dialog.getByRole("link", { name: "联系", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).not.toBeVisible();
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await dialog.getByRole("link", { name: "资源" }).click();
-  await expect(page).toHaveURL(/\/resources$/);
-  await expect(page.getByRole("heading", { level: 1, name: "资源" })).toBeVisible();
+  await dialog.getByRole("link", { name: "技术栈" }).click();
+  await expect(page).toHaveURL(/\/stack$/);
+  await expect(page.getByRole("heading", { level: 1, name: "能力地图" })).toBeVisible();
 });
 
 test("home theme persists without placeholder metrics", async ({ page }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "显示设置" }).click();
   const theme = page.getByRole("button", { name: "切换深浅色模式" });
   await theme.click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -80,7 +81,7 @@ test("home theme persists without placeholder metrics", async ({ page }) => {
 test("top search reaches the existing search page with its query", async ({ page }) => {
   await page.setViewportSize({ width: 1536, height: 1024 });
   await page.goto("/");
-  await page.getByRole("navigation", { name: "顶部导航" }).getByRole("link", { name: "搜索" }).click();
+  await page.getByRole("banner").getByRole("link", { name: "搜索" }).click();
   await expect(page).toHaveURL(/\/search$/);
   await page.getByRole("textbox", { name: "搜索文章和项目" }).fill("跨栈");
   await expect(page.locator(".search-results")).toContainText("跨栈集成文章");

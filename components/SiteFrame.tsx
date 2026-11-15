@@ -8,6 +8,7 @@ import type { PublicSettings } from "@/lib/api";
 import type { LayoutMode } from "@/components/layout/LayoutChoice";
 import {
   MobileNavigation,
+  DisplaySettings,
   TopNavigation,
 } from "@/components/layout/Navigation";
 
@@ -18,11 +19,13 @@ export function SiteFrame({
   children: React.ReactNode;
   settings: PublicSettings;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<"navigation" | "settings" | null>(null);
+  const menuOpen = panel === "navigation";
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [layout, setLayout] = useState<LayoutMode>("auto");
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
   const recoveryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,17 +60,18 @@ export function SiteFrame({
   }, []);
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!panel) return;
+    const panelRef = panel === "navigation" ? navRef : settingsRef;
     const trigger = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
       ? document.activeElement : menuButtonRef.current;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    navRef.current?.querySelector<HTMLElement>("button, a")?.focus();
+    panelRef.current?.querySelector<HTMLElement>("button, a")?.focus();
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") setPanel(null);
       if (event.key === "Tab") {
         const elements =
-          navRef.current?.querySelectorAll<HTMLElement>("a, button");
+          panelRef.current?.querySelectorAll<HTMLElement>("a, button");
         const first = elements?.[0];
         const last = elements?.[elements.length - 1];
         if (event.shiftKey && document.activeElement === first) {
@@ -79,9 +83,9 @@ export function SiteFrame({
         }
       }
     };
-    const desktop = matchMedia("(min-width: 1024px)");
+    const desktop = matchMedia("(min-width: 960px)");
     const onResize = () => {
-      if (desktop.matches) setMenuOpen(false);
+      if (desktop.matches && panel === "navigation") setPanel(null);
     };
     desktop.addEventListener("change", onResize);
     window.addEventListener("keydown", close);
@@ -91,7 +95,7 @@ export function SiteFrame({
       desktop.removeEventListener("change", onResize);
       if (trigger && getComputedStyle(trigger).display !== "none") trigger.focus();
     };
-  }, [menuOpen]);
+  }, [panel]);
 
   function changeLayout(next: LayoutMode) {
     setLayout(next);
@@ -101,7 +105,7 @@ export function SiteFrame({
     } catch {
       /* The current page still changes when storage is unavailable. */
     }
-    setMenuOpen(false);
+    setPanel(null);
     window.scrollTo({ left: 0, behavior: "instant" });
   }
 
@@ -120,25 +124,18 @@ export function SiteFrame({
   return (
     <>
     <div className="site-layout">
-    <div className="personal-site">
       <TopNavigation
         menuOpen={menuOpen}
-        toggleMenu={() => setMenuOpen(!menuOpen)}
+        toggleMenu={() => setPanel(menuOpen ? null : "navigation")}
         buttonRef={menuButtonRef}
+        settingsOpen={panel === "settings"}
+        onOpenSettings={() => setPanel("settings")}
       />
+    <div className="personal-site">
       <div className="personal-body">
         <div className="personal-main">
           <main id="main-content">{children}</main>
           <footer className="personal-footer">
-            <nav className="footer-explore" aria-label="更多内容">
-              <Link href="/notes">笔记</Link>
-              <Link href="/resources">资源</Link>
-              <Link href="/stack">技术栈</Link>
-              <Link href="/timeline">时间轴</Link>
-              <button type="button" onClick={() => setMenuOpen(true)} aria-haspopup="dialog">显示设置</button>
-              <button type="button" onClick={toggleTheme} aria-label="切换深浅色模式" aria-pressed={theme === "dark"}>外观：{theme === "dark" ? "深色" : "浅色"}</button>
-              <Link href="/admin" aria-label="管理员入口">管理</Link>
-            </nav>
             <div>
               <span>
                 © {new Date().getFullYear()} {settings.authorName} ·{" "}
@@ -175,9 +172,16 @@ export function SiteFrame({
       <MobileNavigation
         open={menuOpen}
         navRef={navRef}
-        onClose={() => setMenuOpen(false)}
+        onClose={() => setPanel(null)}
+      />
+      <DisplaySettings
+        open={panel === "settings"}
+        panelRef={settingsRef}
+        onClose={() => setPanel(null)}
         layout={layout}
         onLayoutChange={changeLayout}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
     </>
   );

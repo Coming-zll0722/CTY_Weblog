@@ -24,6 +24,7 @@ const paths = {
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2",
   pin: "M19 9c0 5-7 12-7 12S5 14 5 9a7 7 0 0 1 14 0ZM12 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
   menu: "M4 6h16M4 12h16M4 18h16",
+  settings: "M3 6h5m6 0h7M3 18h11m6 0h1M11 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM17 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
   close: "m6 6 12 12M6 18 18 6",
   mail: "M3 5h18v14H3V5Zm0 0 9 8 9-8",
   github:

@@ -199,7 +199,8 @@ def main() -> None:
             wait_for_url("http://127.0.0.1:8766/", "Vinext production server")
             for route in (
                 "/",
-                "/notes",
+                "/stack",
+                "/timeline",
                 "/contact",
                 "/articles/full-stack-integration",
                 "/projects/full-stack-project",
@@ -213,8 +214,8 @@ def main() -> None:
                     body = response.read().decode("utf8")
                     if response.status != 200:
                         raise RuntimeError(f"Vinext route failed: {route}")
-                    if route == "/notes" and "<h1>学习笔记</h1>" not in body:
-                        raise RuntimeError("Notes returned HTTP 200 without its actual content")
+                    if route == "/stack" and "<h1>能力地图</h1>" not in body:
+                        raise RuntimeError("Stack returned HTTP 200 without its actual content")
                     if route == "/" and (
                         "跨栈集成文章" not in body
                         or "https://devlelin.xyz" not in body
