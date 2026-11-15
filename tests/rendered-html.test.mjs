@@ -160,8 +160,6 @@ test("server-renders the technical publication home page", async () => {
 test("server-renders core public routes", async () => {
   for (const [path, expected] of [
     ["/articles", "问题排查"],
-    ["/notes", "学习笔记"],
-    ["/resources", "技术资料"],
     ["/projects", "判断与验证"],
     ["/stack", "实际使用"],
     ["/about", "嵌入式软件测试"],
@@ -173,6 +171,15 @@ test("server-renders core public routes", async () => {
   }
   const about = await render("/about");
   assert.match(await about.text(), /测试作者/);
+});
+
+test("retired pages return 404 and are absent from the sitemap", async () => {
+  for (const path of ["/notes", "/resources"]) {
+    assert.equal((await render(path)).status, 404, path);
+  }
+  const response = await render("/sitemap.xml");
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(await response.text(), /\/(notes|resources)(?:<|\/)/);
 });
 
 test("offers the RSS subscription entry only on the contact page", async () => {

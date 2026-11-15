@@ -84,7 +84,9 @@ test("theme and mobile navigation controls update accessible state", async () =>
     await vi.runOnlyPendingTimersAsync();
   });
 
+  fireEvent.click(screen.getByRole("button", { name: "显示设置" }));
   fireEvent.click(screen.getByRole("button", { name: "切换深浅色模式" }));
+  fireEvent.keyDown(window, { key: "Escape" });
   expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   expect(localStorage.getItem("theme")).toBe("dark");
   const header = container.querySelector(".personal-topbar");
@@ -100,10 +102,10 @@ test("theme and mobile navigation controls update accessible state", async () =>
   expect(menu).toHaveAttribute("aria-expanded", "true");
   const dialog = screen.getByRole("dialog", { name: "导航菜单" });
   expect(dialog).toHaveAttribute("aria-modal", "true");
-  expect(within(dialog).getByRole("link", { name: "资源" })).toHaveAttribute("href", "/resources");
+  expect(within(dialog).getByRole("link", { name: "技术栈" })).toHaveAttribute("href", "/stack");
   expect(document.body.style.overflow).toBe("hidden");
   const first = within(dialog).getByRole("button", { name: "关闭导航" });
-  const last = within(dialog).getByRole("button", { name: "桌面" });
+  const last = within(dialog).getByRole("link", { name: "联系" });
   expect(first).toHaveFocus();
   fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
   expect(last).toHaveFocus();
@@ -119,12 +121,32 @@ test("primary navigation and secondary destinations remain accessible", () => {
   render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
   const top = screen.getByRole("navigation", { name: "顶部导航" });
   expect(within(top).getAllByRole("link").map((link) => link.getAttribute("href")))
-    .toEqual(["/", "/articles", "/projects", "/about", "/search"]);
-  const more = screen.getByRole("navigation", { name: "更多内容" });
-  expect(within(more).getByRole("link", { name: "技术栈" })).toHaveAttribute("href", "/stack");
-  fireEvent.click(screen.getByRole("button", { name: "显示设置" }));
+    .toEqual(["/", "/articles", "/projects", "/stack", "/timeline", "/about"]);
+  expect(screen.queryByRole("navigation", { name: "更多内容" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "笔记" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "资源" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "打开导航菜单" }));
   const mobile = screen.getByRole("navigation", { name: "移动导航" });
-  expect(within(mobile).getAllByRole("link").map((link) => link.textContent)).toEqual(["首页", "文章", "项目", "笔记", "资源", "技术栈", "时间轴", "关于我", "联系"]);
+  expect(within(mobile).getAllByRole("link").map((link) => link.textContent)).toEqual(["首页", "文章", "项目", "技术栈", "时间轴", "关于我", "联系"]);
+});
+
+test("display settings contain appearance and layout and restore focus when closed", () => {
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  render(<SiteFrame settings={defaultPublicSettings}><p>content</p></SiteFrame>);
+  const trigger = screen.getByRole("button", { name: "显示设置" });
+  trigger.focus();
+  fireEvent.click(trigger);
+  const dialog = screen.getByRole("dialog", { name: "显示设置" });
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  expect(within(dialog).getByText("外观颜色")).toBeInTheDocument();
+  expect(within(dialog).queryByRole("navigation")).not.toBeInTheDocument();
+  fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+  expect(within(dialog).getByRole("button", { name: "桌面" })).toHaveFocus();
+  fireEvent.click(within(dialog).getByRole("button", { name: "桌面" }));
+  expect(localStorage.getItem("site-layout")).toBe("desktop");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(trigger).toHaveFocus();
+  expect(document.body.style.overflow).toBe("");
 });
 
 test("footer exposes the ICP registration through the MIIT lookup", () => {
